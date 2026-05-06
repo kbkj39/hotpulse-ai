@@ -78,3 +78,19 @@ VITE_API_BASE_URL=http://localhost:8080
 
 更多帮助
 - 如果你希望我把 README 翻成英文、添加徽章（CI、license、build status）、或根据具体部署（如 Kubernetes、Cloud）扩展运行文档，我可以继续补充。
+
+**截图**
+
+- 信息源管理：
+
+	![信息源管理](docs/screenshots/source_management.png)
+
+- 智能对话界面：
+
+	![智能对话](docs/screenshots/chat.png)
+
+- 热点雷达 / 监控面板：
+
+	![热点雷达](docs/screenshots/hotspots.png)
+
+将图片文件放入仓库目录 `docs/screenshots/` 下，推荐文件名：`source_management.png`、`chat.png`、`hotspots.png`。如果你把图片命名或放到其他位置，我可以帮你调整 README 中的路径。

@@ -55,15 +55,17 @@ public class JsoupFetcher {
         }
     }
 
+    /**
+     * 抓取页面并返回原始 HTML（含 &lt;title&gt; 标签），
+     * 供 {@link com.hotpulse.service.ingest.DocumentCleaner} 提取标题与正文。
+     */
     public String fetchContent(String url) {
         try {
             Document doc = Jsoup.connect(url)
                     .userAgent("Mozilla/5.0 (compatible; HotPulseBot/1.0)")
                     .timeout(15000)
                     .get();
-            return doc.select("article, .article-body, .post-content, main, body").first() != null
-                    ? doc.select("article, .article-body, .post-content, main, body").first().text()
-                    : doc.text();
+            return doc.outerHtml();
         } catch (Exception e) {
             log.error("Jsoup fetch content failed for url: {}", url, e);
             return "";

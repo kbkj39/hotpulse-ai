@@ -15,7 +15,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8090',
         changeOrigin: true,
       },
       // Socket.io-client 使用 /socket.io 作为传输路径，代理至 netty-socketio 服务器（端口 9001）

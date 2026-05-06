@@ -50,7 +50,8 @@ spring:
           max-tokens: 4096
       embedding:
         options:
-          model: ${EMBEDDING_MODEL:text-embedding-3-large}
+          model: ${EMBEDDING_MODEL:text-embedding-3-small}
+          dimensions: 1536
 
   threads:
     virtual:

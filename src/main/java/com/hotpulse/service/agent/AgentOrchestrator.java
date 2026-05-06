@@ -13,7 +13,7 @@ import com.hotpulse.repository.MessageRepository;
 import com.hotpulse.repository.SourceRepository;
 import com.hotpulse.service.crawler.CandidateItem;
 import com.hotpulse.service.hotspot.HotspotService;
-import com.hotpulse.service.rag.RagService;
+import com.hotpulse.service.iwencai.IwencaiSkillService;
 import com.hotpulse.sse.AgentSseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +40,7 @@ public class AgentOrchestrator {
     private final AgentExecutionService executionService;
     private final AgentSseService agentSseService;
     private final SourceRepository sourceRepository;
-    private final RagService ragService;
+    private final IwencaiSkillService iwencaiSkillService;
     private final HotspotService hotspotService;
     private final MessageRepository messageRepository;
     private final ObjectMapper objectMapper;
@@ -80,16 +80,13 @@ public class AgentOrchestrator {
             // Step 5: 聚合
             List<Hotspot> hotspots = aggregatorAgent.aggregate(executionId, analysisResults);
 
-            // Step 6: 基于当前知识库和新入库内容生成 RAG 回答
-            SearchResponse ragResult = generateAnswer(query);
-            // RAG 无法生成回答时（知识库为空或 LLM 限流），用热点列表摘要作为回答
-            String answer = (ragResult.getAnswer() != null && !ragResult.getAnswer().isBlank())
-                    ? ragResult.getAnswer()
-                    : buildHotspotSummary(hotspots, query);
+            // Step 6: 用同花顺问财获取证据，结合热点摘要生成回答
+            List<SearchResponse.Evidence> iwencaiEvidences = fetchIwencaiEvidences(query);
+            String answer = buildHotspotSummary(hotspots, query);
 
-            // Step 7: 保存 assistant 消息到对话历史（复用 Step 6 的检索结果，避免重复调用 LLM）
+            // Step 7: 保存 assistant 消息到对话历史
             if (conversationId != null) {
-                saveAssistantMessage(conversationId, answer, ragResult.getEvidences());
+                saveAssistantMessage(conversationId, answer, iwencaiEvidences);
             }
 
             // Step 8: 完成，推送最终 SSE 事件（含 answer 和 hotspots[]）
@@ -191,15 +188,12 @@ public class AgentOrchestrator {
         }
     }
 
-    private SearchResponse generateAnswer(String query) {
+    private List<SearchResponse.Evidence> fetchIwencaiEvidences(String query) {
         try {
-            return ragService.query(query, 8);
+            return iwencaiSkillService.query(query, 8);
         } catch (Exception e) {
-            log.warn("RAG answer generation failed for query: {}", query, e);
-            SearchResponse fallback = new SearchResponse();
-            fallback.setAnswer("暂时无法生成回答，请查看上方热点列表。");
-            fallback.setEvidences(java.util.List.of());
-            return fallback;
+            log.warn("Iwencai evidence fetch failed for query: {}", query, e);
+            return java.util.List.of();
         }
     }
 

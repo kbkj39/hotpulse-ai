@@ -1,7 +1,6 @@
 package com.hotpulse.service.ingest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hotpulse.entity.Chunk;
 import com.hotpulse.entity.Document;
 import com.hotpulse.entity.RawPage;
 import com.hotpulse.entity.Source;
@@ -9,7 +8,6 @@ import com.hotpulse.repository.DocumentRepository;
 import com.hotpulse.repository.RawPageRepository;
 import com.hotpulse.repository.SourceRepository;
 import com.hotpulse.service.crawler.JsoupFetcher;
-import com.hotpulse.service.rag.EmbeddingService;
 import com.hotpulse.skill.SummarizeSkill;
 import com.hotpulse.skill.TagDocumentSkill;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -29,8 +26,6 @@ public class IngestService {
     private final JsoupFetcher jsoupFetcher;
     private final DocumentCleaner documentCleaner;
     private final DuplicateDetector duplicateDetector;
-    private final ChunkingService chunkingService;
-    private final EmbeddingService embeddingService;
     private final SummarizeSkill summarizeSkill;
     private final TagDocumentSkill tagDocumentSkill;
     private final SourceRepository sourceRepository;
@@ -92,13 +87,11 @@ public class IngestService {
         }
 
         // 8. 持久化清洗后文档
-        // 查询来源名称，供前端展示
         String sourceName = null;
         if (sourceId != null && sourceId > 0) {
             sourceName = sourceRepository.findById(sourceId).map(Source::getName).orElse(null);
         }
 
-        // 序列化标签
         String tagsJson = "[]";
         if (!tags.isEmpty()) {
             try {
@@ -117,15 +110,8 @@ public class IngestService {
         document.setSourceUrl(url);
         document.setSourceName(sourceName);
         document.setTagsJson(tagsJson);
-        document = documentRepository.save(document);
-
-        // 9. 切片
-        List<Chunk> chunks = chunkingService.chunk(document.getId(), content);
-
-        // 10. 向量化并写入 PGVector
-        embeddingService.embedChunks(chunks, url, document.getPublishedAt());
-
-        log.info("Ingested document id={} from url={}", document.getId(), url);
-        return document;
+        Document saved = documentRepository.save(document);
+        log.info("Ingested document id={} from url={}", saved.getId(), url);
+        return saved;
     }
 }

@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS monitor_keywords (
+    id         BIGSERIAL PRIMARY KEY,
+    keyword    VARCHAR(255) NOT NULL UNIQUE,
+    enabled    BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);

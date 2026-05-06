@@ -1,0 +1,32 @@
+spring:
+  ai:
+    openai:
+      api-key: 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
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/hotpulse
+    username: hotpulse
+    password: hotpulse123
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: hotpulse
+    password: hotpulse123
+
+  jpa:
+    show-sql: true
+
+iwencai:
+  base-url: https://openapi.iwencai.com
+  api-key: ${IWENCAI_API_KEY:}
+
+logging:
+  level:
+    com.hotpulse: DEBUG
+    org.springframework.ai: DEBUG

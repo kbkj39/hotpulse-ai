@@ -1,0 +1,10 @@
+target/
+.mvn/
+.git/
+.gitignore
+.idea/
+node_modules/
+frontend/
+*.iml
+logs/
+*.log

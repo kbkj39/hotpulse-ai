@@ -1,0 +1,98 @@
+package com.hotpulse.service.hotspot;
+
+import com.hotpulse.entity.AgentExecution;
+import com.hotpulse.entity.MonitorKeyword;
+import com.hotpulse.repository.MonitorKeywordRepository;
+import com.hotpulse.service.agent.AgentExecutionService;
+import com.hotpulse.service.agent.AgentOrchestrator;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class MonitorKeywordService {
+
+    private final MonitorKeywordRepository monitorKeywordRepository;
+    private final AgentExecutionService agentExecutionService;
+    private final ExecutorService virtualThreadExecutor;
+    @Lazy
+    private final AgentOrchestrator agentOrchestrator;
+
+    public List<MonitorKeyword> list() {
+        return monitorKeywordRepository.findAll(Sort.by(Sort.Direction.ASC, "createdAt"));
+    }
+
+    public MonitorKeyword create(MonitorKeyword input) {
+        String normalized = normalize(input.getKeyword());
+        monitorKeywordRepository.findByKeywordIgnoreCase(normalized).ifPresent(existing -> {
+            throw new IllegalArgumentException("监控关键词已存在: " + normalized);
+        });
+
+        MonitorKeyword keyword = new MonitorKeyword();
+        keyword.setKeyword(normalized);
+        boolean enabled = input.getEnabled() == null || input.getEnabled();
+        keyword.setEnabled(enabled);
+        MonitorKeyword saved = monitorKeywordRepository.save(keyword);
+
+        // 首次添加关键词时立即触发一次搜索抓�?        if (enabled) {
+            triggerImmediateCrawl(normalized);
+        }
+        return saved;
+    }
+
+    public MonitorKeyword update(Long id, MonitorKeyword input) {
+        MonitorKeyword existing = monitorKeywordRepository.findById(id)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("监控关键词不存在: " + id));
+
+        if (input.getKeyword() != null && !input.getKeyword().isBlank()) {
+            String normalized = normalize(input.getKeyword());
+            monitorKeywordRepository.findByKeywordIgnoreCase(normalized)
+                    .filter(other -> !other.getId().equals(id))
+                    .ifPresent(other -> {
+                        throw new IllegalArgumentException("监控关键词已存在: " + normalized);
+                    });
+            existing.setKeyword(normalized);
+        }
+
+        if (input.getEnabled() != null) {
+            existing.setEnabled(input.getEnabled());
+        }
+
+        return monitorKeywordRepository.save(existing);
+    }
+
+    public void delete(Long id) {
+        if (!monitorKeywordRepository.existsById(id)) {
+            throw new jakarta.persistence.EntityNotFoundException("监控关键词不存在: " + id);
+        }
+        monitorKeywordRepository.deleteById(id);
+    }
+
+    private String normalize(String keyword) {
+        String normalized = keyword == null ? "" : keyword.trim().replaceAll("\\s+", " ");
+        if (normalized.isBlank()) {
+            throw new IllegalArgumentException("监控关键词不能为�?);
+        }
+        return normalized;
+    }
+
+    private void triggerImmediateCrawl(String keyword) {
+        try {
+            AgentExecution execution = agentExecutionService.create("立即监控: " + keyword, null);
+            Long executionId = execution.getId();
+            virtualThreadExecutor.execute(() ->
+                    agentOrchestrator.executeScheduled(executionId, List.of(keyword))
+            );
+            log.info("MonitorKeywordService: 已触发关键词「{}」的即时抓取，executionId={}", keyword, executionId);
+        } catch (Exception e) {
+            log.warn("MonitorKeywordService: 触发即时抓取失败，keyword={}", keyword, e);
+        }
+    }
+}

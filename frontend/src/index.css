@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-bg-base: #000000;
+  --color-bg-surface: #0A0A0A;
+  --color-bg-elevated: #111111;
+  --color-border: #1F1F1F;
+  --color-border-subtle: #161616;
+  --color-border-strong: #2E2E2E;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #888888;
+  --color-text-muted: #444444;
+  --color-text-link: #CCCCCC;
+
+  --font-mono: 'Fira Code', 'Noto Sans SC', ui-monospace, monospace;
+  --font-sans: 'Fira Sans', 'Noto Sans SC', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-none: 0px;
+  --radius-sm: 2px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: #000000;
+  color: #FFFFFF;
+  font-family: 'Fira Sans', 'Noto Sans SC', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: #000000;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+/* 滚动条极简化 */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+::-webkit-scrollbar-thumb {
+  background: #2E2E2E;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #444444;
+}
+
+/* 选中文字颜色 */
+::selection {
+  background: #FFFFFF;
+  color: #000000;
+}
+
+/* 焦点轮廓 */
+:focus-visible {
+  outline: 1px solid #FFFFFF;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+

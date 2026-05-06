@@ -1,0 +1,79 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: hotpulse-postgres
+    environment:
+      POSTGRES_DB: hotpulse
+      POSTGRES_USER: ${POSTGRES_USER:-hotpulse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hotpulse123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hotpulse} -d hotpulse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: hotpulse-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: hotpulse-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-hotpulse}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-hotpulse123}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: maven:3.9.6-eclipse-temurin-21
+    container_name: hotpulse-backend
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace:delegated
+      - ~/.m2:/root/.m2
+    command: mvn -DskipTests spring-boot:run
+    ports:
+      - "8080:8080"
+      - "9001:9001"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/hotpulse
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-hotpulse}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-hotpulse123}
+      - SERVER_ADDRESS=0.0.0.0
+      - SOCKETIO_PORT=9001
+      - SERVER_PORT=8080
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:

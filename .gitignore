@@ -1,0 +1,11 @@
+.env
+*.class
+target/
+*.jar
+*.war
+*.log
+node_modules/
+frontend/dist/
+frontend/.env
+.idea/
+*.iml

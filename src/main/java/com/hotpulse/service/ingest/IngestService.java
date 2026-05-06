@@ -35,6 +35,11 @@ public class IngestService {
 
     @Transactional
     public Document ingest(String url, Long sourceId) {
+        return ingest(url, sourceId, null);
+    }
+
+    @Transactional
+    public Document ingest(String url, Long sourceId, Instant publishedAt) {
         // 1. URL 去重：已存在则直接返回已入库的 Document，供 Agent 继续使用
         if (duplicateDetector.isDuplicateUrl(url)) {
             log.info("URL already ingested, reusing existing document: {}", url);
@@ -105,7 +110,7 @@ public class IngestService {
         document.setRawPageId(rawPage.getId());
         document.setTitle(title.isBlank() ? url : title);
         document.setContent(content);
-        document.setPublishedAt(Instant.now());
+        document.setPublishedAt(publishedAt != null ? publishedAt : Instant.now());
         document.setSummary(summary);
         document.setSourceUrl(url);
         document.setSourceName(sourceName);

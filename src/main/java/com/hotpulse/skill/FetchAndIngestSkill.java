@@ -16,7 +16,11 @@ public class FetchAndIngestSkill implements Skill<FetchAndIngestSkill.Input, Doc
 
     private final IngestService ingestService;
 
-    public record Input(String url, Long sourceId) {}
+    public record Input(String url, Long sourceId, java.time.Instant publishedAt) {
+        public Input(String url, Long sourceId) {
+            this(url, sourceId, null);
+        }
+    }
 
     @Override
     public String name() {
@@ -33,7 +37,7 @@ public class FetchAndIngestSkill implements Skill<FetchAndIngestSkill.Input, Doc
         long start = System.currentTimeMillis();
         String traceId = MDC.get("traceId");
         try {
-            Document doc = ingestService.ingest(input.url(), input.sourceId());
+            Document doc = ingestService.ingest(input.url(), input.sourceId(), input.publishedAt());
             return SkillResult.ok(doc, traceId, System.currentTimeMillis() - start);
         } catch (Exception e) {
             log.error("FetchAndIngestSkill failed for url: {}", input.url(), e);

@@ -252,7 +252,7 @@ public class AgentOrchestrator {
         List<CompletableFuture<Document>> futures = candidates.stream()
                 .limit(20) // 限制单次最大抓取数量
                 .map(candidate -> CompletableFuture.supplyAsync(
-                        () -> crawlerAgent.crawl(executionId, candidate.getUrl(), defaultSourceId),
+                        () -> crawlerAgent.crawl(executionId, candidate.getUrl(), defaultSourceId, candidate.getPublishedAt()),
                         virtualThreadExecutor))
                 .collect(Collectors.toList());
 

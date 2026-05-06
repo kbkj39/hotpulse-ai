@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -16,12 +18,12 @@ public class CrawlerAgent {
     private final FetchAndIngestSkill fetchAndIngestSkill;
     private final AgentExecutionTracker tracker;
 
-    public Document crawl(Long executionId, String url, Long sourceId) {
+    public Document crawl(Long executionId, String url, Long sourceId, Instant publishedAt) {
         tracker.recordStep(executionId, AgentConstants.CRAWLER_AGENT, AgentConstants.STATUS_RUNNING,
                 "正在抓取: " + url, null);
         try {
             SkillResult<Document> result = fetchAndIngestSkill.execute(
-                    new FetchAndIngestSkill.Input(url, sourceId));
+                    new FetchAndIngestSkill.Input(url, sourceId, publishedAt));
             if (result.isOk() && result.data() != null) {
                 tracker.recordStep(executionId, AgentConstants.CRAWLER_AGENT, AgentConstants.STATUS_DONE,
                         "抓取完成: " + url, null);

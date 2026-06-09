@@ -4,6 +4,7 @@ import com.hotpulse.dto.SearchResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@ConditionalOnProperty(prefix = "hotpulse.rag", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class RagService {
 

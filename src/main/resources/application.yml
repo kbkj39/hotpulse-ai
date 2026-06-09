@@ -41,17 +41,20 @@ spring:
 
   ai:
     openai:
-      api-key: ${OPENROUTER_API_KEY:}
-      base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api}
+      api-key: ${SOPHNET_API_KEY:dummy}
+      base-url: ${SOPHNET_BASE_URL:https://www.sophnet.com/api/open-apis}
       chat:
+        completions-path: ${SOPHNET_CHAT_COMPLETIONS_PATH:/chat/completions}
         options:
-          model: deepseek/deepseek-chat
+          model: ${SOPHNET_CHAT_MODEL:DeepSeek-v3}
           temperature: 0.3
           max-tokens: 4096
       embedding:
         options:
           model: ${EMBEDDING_MODEL:text-embedding-3-small}
           dimensions: 1536
+    model:
+      embedding: none
 
   threads:
     virtual:
@@ -77,6 +80,10 @@ agent:
   crawler:
     max-parallel: ${AGENT_CRAWLER_MAX_PARALLEL:10}
   token-budget-per-execution: ${AGENT_TOKEN_BUDGET_PER_EXECUTION:50000}
+
+hotpulse:
+  rag:
+    enabled: ${HOTPULSE_RAG_ENABLED:false}
 
 iwencai:
   base-url: ${IWENCAI_BASE_URL:https://openapi.iwencai.com}

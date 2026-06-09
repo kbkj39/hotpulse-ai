@@ -1,8 +1,4 @@
 spring:
-  ai:
-    openai:
-      api-key: ${OPENROUTER_API_KEY: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}
-
   datasource:
     url: jdbc:postgresql://localhost:5432/hotpulse
     username: hotpulse

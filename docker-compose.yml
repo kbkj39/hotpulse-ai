@@ -64,7 +64,11 @@ services:
       - SERVER_ADDRESS=0.0.0.0
       - SOCKETIO_PORT=9001
       - SERVER_PORT=8090
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - SOPHNET_API_KEY=${SOPHNET_API_KEY:-dummy}
+      - SOPHNET_BASE_URL=${SOPHNET_BASE_URL:-https://www.sophnet.com/api/open-apis}
+      - SOPHNET_CHAT_COMPLETIONS_PATH=${SOPHNET_CHAT_COMPLETIONS_PATH:-/chat/completions}
+      - SOPHNET_CHAT_MODEL=${SOPHNET_CHAT_MODEL:-DeepSeek-v3}
+      - HOTPULSE_RAG_ENABLED=${HOTPULSE_RAG_ENABLED:-false}
     depends_on:
       postgres:
         condition: service_healthy

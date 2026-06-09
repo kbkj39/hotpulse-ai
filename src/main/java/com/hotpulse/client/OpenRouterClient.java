@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /**
- * 封装 OpenRouter 专用请求头与限流逻辑，
+ * 封装 OpenAI 兼容服务请求头，
  * 作为 Spring AI 底层适配层被 ChatClient / EmbeddingClient 复用。
  */
 @Component
@@ -16,7 +16,7 @@ public class OpenRouterClient {
     private final RestClient restClient;
 
     public OpenRouterClient(
-            @Value("${spring.ai.openai.base-url:https://openrouter.ai/api/v1}") String baseUrl,
+            @Value("${spring.ai.openai.base-url:https://www.sophnet.com/api/open-apis}") String baseUrl,
             @Value("${spring.ai.openai.api-key:}") String apiKey
     ) {
         this.restClient = RestClient.builder()

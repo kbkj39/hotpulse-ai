@@ -4,6 +4,7 @@ import com.hotpulse.dto.SearchResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Slf4j
 @Service
+@ConditionalOnProperty(prefix = "hotpulse.rag", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class VectorSearchService {
 

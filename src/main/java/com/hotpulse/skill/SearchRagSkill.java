@@ -5,6 +5,7 @@ import com.hotpulse.service.rag.VectorSearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -12,6 +13,7 @@ import java.util.List;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "hotpulse.rag", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class SearchRagSkill implements Skill<SearchRagSkill.Input, List<SearchResponse.Evidence>> {
 

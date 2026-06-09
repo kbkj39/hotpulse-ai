@@ -3,6 +3,7 @@ package com.hotpulse.client;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.List;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "hotpulse.rag", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class EmbeddingClient {
 

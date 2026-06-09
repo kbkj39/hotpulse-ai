@@ -1,6 +1,5 @@
 package com.hotpulse.service.agent;
 
-import com.hotpulse.client.EmbeddingClient;
 import com.hotpulse.common.AgentConstants;
 import com.hotpulse.dto.SearchResponse;
 import com.hotpulse.entity.Document;
@@ -13,8 +12,6 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -30,17 +27,15 @@ public class AnalyzerAgent {
 
     private final IwencaiSkillService iwencaiSkillService;
     private final VerifyTruthfulnessSkill verifyTruthfulnessSkill;
-    private final EmbeddingClient embeddingClient;
     private final AgentExecutionTracker tracker;
-    private final ExecutorService virtualThreadExecutor;
 
     /**
      * 批量分析文档列表（主入口）。
      *
      * <p>优化流程：
      * <ol>
-     *   <li>RAG 查询执行一次，所有文档共享证据</li>
-     *   <li>Query embedding 执行一次，并行计算每篇语义相关性</li>
+     *   <li>外部证据查询执行一次，所有文档共享证据</li>
+     *   <li>基于关键词命中计算每篇文档相关性</li>
      *   <li>LLM 真实性评估按 BATCH_SIZE 分组，大幅减少 LLM 调用次数</li>
      * </ol>
      *
@@ -56,9 +51,10 @@ public class AnalyzerAgent {
         // Step 1: 共享 RAG 证据（整个批次只查一次）
         List<SearchResponse.Evidence> evidences = fetchSharedEvidences(originalQuery);
 
-        // Step 2: 计算 query embedding（一次），并行计算每篇文档语义相关性
-        float[] queryVector = safeEmbed(originalQuery);
-        List<Double> relevanceScores = computeSemanticRelevances(documents, queryVector);
+        // Step 2: 用关键词命中计算每篇文档相关性，避免依赖 embedding API
+        List<Double> relevanceScores = documents.stream()
+                .map(doc -> computeKeywordRelevance(doc, originalQuery))
+                .collect(Collectors.toList());
 
         // Step 3: 按 BATCH_SIZE 分组，批量调用 LLM 进行真实性评估
         List<Double> truthScores = batchVerifyTruth(documents, evidences);
@@ -73,7 +69,8 @@ public class AnalyzerAgent {
             double importance = computeImportanceScore(doc, evidences, relevance);
 
             if (truth < TRUTH_THRESHOLD || relevance < RELEVANCE_THRESHOLD) {
-                log.debug("文档过滤 docId={} truth={:.2f} relevance={:.2f}", doc.getId(), truth, relevance);
+                log.debug("文档过滤 docId={} truth={} relevance={}",
+                        doc.getId(), String.format("%.2f", truth), String.format("%.2f", relevance));
                 continue;
             }
             results.add(Map.entry(doc, new AnalysisResult(truth, relevance, importance,
@@ -113,40 +110,6 @@ public class AnalyzerAgent {
     }
 
     /**
-     * 并行计算每篇文档与 query 的语义余弦相似度。
-     * 文档侧使用「标题 + 摘要」的 embedding（比全文 embedding 快且代表性强）。
-     * 若 embedding 失败则退化为关键词覆盖率。
-     */
-    private List<Double> computeSemanticRelevances(List<Document> docs, float[] queryVector) {
-        if (queryVector.length == 0) {
-            // embedding 不可用，退化为关键词匹配
-            return docs.stream()
-                    .map(d -> computeKeywordRelevance(d, ""))
-                    .collect(Collectors.toList());
-        }
-
-        List<CompletableFuture<Double>> futures = docs.stream()
-                .map(doc -> CompletableFuture.supplyAsync(() -> {
-                    try {
-                        String docText = buildDocRepresentation(doc);
-                        float[] docVector = embeddingClient.embed(docText);
-                        return (double) cosineSimilarity(queryVector, docVector);
-                    } catch (Exception e) {
-                        log.debug("Embedding failed for doc {}, fallback to keyword", doc.getId());
-                        return computeKeywordRelevance(doc, "");
-                    }
-                }, virtualThreadExecutor))
-                .collect(Collectors.toList());
-
-        return futures.stream()
-                .map(f -> {
-                    try { return f.join(); }
-                    catch (Exception e) { return 0.4; }
-                })
-                .collect(Collectors.toList());
-    }
-
-    /**
      * 按 BATCH_SIZE 分组批量调用 LLM 真实性评估，减少 LLM 调用次数。
      */
     private List<Double> batchVerifyTruth(List<Document> docs, List<SearchResponse.Evidence> evidences) {
@@ -181,22 +144,12 @@ public class AnalyzerAgent {
         double docBonus = 0;
         if (doc.getSummary() != null && !doc.getSummary().isBlank()) docBonus += 0.05;
         if (doc.getTitle() != null && doc.getTitle().length() > 10) docBonus += 0.05;
-        // 语义相关性越高，重要性加权越大
+        // 相关性越高，重要性加权越大
         double relevanceBonus = relevanceScore * 0.1;
         return Math.min(1.0, evidenceMax + docBonus + relevanceBonus);
     }
 
-    /** 文档表示：标题 + 摘要（若有），用于 embedding 计算，比全文短且语义集中。*/
-    private String buildDocRepresentation(Document doc) {
-        StringBuilder sb = new StringBuilder();
-        if (doc.getTitle() != null) sb.append(doc.getTitle()).append(" ");
-        if (doc.getSummary() != null) sb.append(doc.getSummary());
-        else if (doc.getContent() != null)
-            sb.append(doc.getContent(), 0, Math.min(doc.getContent().length(), 300));
-        return sb.toString().trim();
-    }
-
-    /** 关键词覆盖率（退化方案，当 embedding 不可用时使用）。*/
+    /** 关键词覆盖率，用于判断监控关键词与候选文档的相关性。*/
     private double computeKeywordRelevance(Document doc, String query) {
         if (query.isBlank()) return 0.5;
         String docText = (
@@ -209,27 +162,6 @@ public class AnalyzerAgent {
         if (meaningful == 0) return 0.5;
         long matches = java.util.Arrays.stream(terms).filter(t -> t.length() >= 2 && docText.contains(t)).count();
         return Math.min(1.0, 0.3 + (double) matches / meaningful * 0.7);
-    }
-
-    private float[] safeEmbed(String text) {
-        try {
-            return embeddingClient.embed(text);
-        } catch (Exception e) {
-            log.warn("Failed to embed query, will use keyword fallback: {}", e.getMessage());
-            return new float[0];
-        }
-    }
-
-    private float cosineSimilarity(float[] a, float[] b) {
-        if (a.length == 0 || b.length == 0 || a.length != b.length) return 0.5f;
-        double dot = 0, normA = 0, normB = 0;
-        for (int i = 0; i < a.length; i++) {
-            dot   += (double) a[i] * b[i];
-            normA += (double) a[i] * a[i];
-            normB += (double) b[i] * b[i];
-        }
-        if (normA == 0 || normB == 0) return 0f;
-        return (float) (dot / (Math.sqrt(normA) * Math.sqrt(normB)));
     }
 
     public record AnalysisResult(

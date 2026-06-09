@@ -62,15 +62,36 @@ public class AnalyzerAgent {
         // Step 4: 组装结果，过滤低质量文档
         List<Map.Entry<Document, AnalysisResult>> results = new ArrayList<>();
         int passed = 0;
+        int lowTruth = 0;
+        int lowRelevance = 0;
+        int lowBoth = 0;
+        List<DocumentAnalysisTrace> traces = new ArrayList<>();
         for (int i = 0; i < documents.size(); i++) {
             Document doc = documents.get(i);
             double truth = truthScores.get(i);
             double relevance = relevanceScores.get(i);
             double importance = computeImportanceScore(doc, evidences, relevance);
+            boolean truthPassed = truth >= TRUTH_THRESHOLD;
+            boolean relevancePassed = relevance >= RELEVANCE_THRESHOLD;
+            boolean accepted = truthPassed && relevancePassed;
 
-            if (truth < TRUTH_THRESHOLD || relevance < RELEVANCE_THRESHOLD) {
-                log.debug("文档过滤 docId={} truth={} relevance={}",
-                        doc.getId(), String.format("%.2f", truth), String.format("%.2f", relevance));
+            String reason = "通过";
+            if (!accepted) {
+                if (!truthPassed && !relevancePassed) {
+                    lowBoth++;
+                    reason = "真实性和相关性不足";
+                } else if (!truthPassed) {
+                    lowTruth++;
+                    reason = "真实性不足";
+                } else {
+                    lowRelevance++;
+                    reason = "相关性不足";
+                }
+            }
+
+            traces.add(new DocumentAnalysisTrace(doc, truth, relevance, importance, accepted, reason));
+
+            if (!accepted) {
                 continue;
             }
             results.add(Map.entry(doc, new AnalysisResult(truth, relevance, importance,
@@ -78,8 +99,11 @@ public class AnalyzerAgent {
             passed++;
         }
 
+        logAnalysisTraces(executionId, traces);
+
+        String summary = buildAnalysisSummary(documents.size(), passed, lowRelevance, lowTruth, lowBoth, traces);
         tracker.recordStep(executionId, AgentConstants.ANALYZER_AGENT, AgentConstants.STATUS_DONE,
-                "分析完成：" + documents.size() + " 篇 → 通过 " + passed + " 篇", null);
+                summary, null);
 
         return results;
     }
@@ -164,10 +188,74 @@ public class AnalyzerAgent {
         return Math.min(1.0, 0.3 + (double) matches / meaningful * 0.7);
     }
 
+    private String buildAnalysisSummary(int total,
+                                        int passed,
+                                        int lowRelevance,
+                                        int lowTruth,
+                                        int lowBoth,
+                                        List<DocumentAnalysisTrace> traces) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("分析完成：").append(total).append(" 篇 → 通过 ").append(passed).append(" 篇");
+        sb.append("；过滤：相关性不足 ").append(lowRelevance)
+                .append("，真实性不足 ").append(lowTruth)
+                .append("，两者不足 ").append(lowBoth);
+
+        traces.stream()
+                .sorted((a, b) -> Double.compare(b.combinedScore(), a.combinedScore()))
+                .limit(3)
+                .forEach(trace -> sb.append("\n")
+                        .append(trace.accepted() ? "通过" : "过滤")
+                        .append("：")
+                        .append(shortTitle(trace.doc()))
+                        .append(" truth=").append(formatScore(trace.truth()))
+                        .append(" relevance=").append(formatScore(trace.relevance()))
+                        .append("（").append(trace.reason()).append("）"));
+        return sb.toString();
+    }
+
+    private void logAnalysisTraces(Long executionId, List<DocumentAnalysisTrace> traces) {
+        traces.stream()
+                .sorted((a, b) -> Double.compare(b.combinedScore(), a.combinedScore()))
+                .forEach(trace -> log.info(
+                        "AnalyzerAgent result executionId={} docId={} accepted={} reason={} truth={} relevance={} importance={} title={}",
+                        executionId,
+                        trace.doc().getId(),
+                        trace.accepted(),
+                        trace.reason(),
+                        formatScore(trace.truth()),
+                        formatScore(trace.relevance()),
+                        formatScore(trace.importance()),
+                        shortTitle(trace.doc())));
+    }
+
+    private String shortTitle(Document doc) {
+        String title = doc.getTitle() != null && !doc.getTitle().isBlank()
+                ? doc.getTitle()
+                : "无标题";
+        return title.length() <= 60 ? title : title.substring(0, 57) + "...";
+    }
+
+    private String formatScore(double value) {
+        return String.format("%.2f", value);
+    }
+
     public record AnalysisResult(
             double truthScore,
             double relevanceScore,
             double importanceScore,
             String evidence
     ) {}
+
+    private record DocumentAnalysisTrace(
+            Document doc,
+            double truth,
+            double relevance,
+            double importance,
+            boolean accepted,
+            String reason
+    ) {
+        double combinedScore() {
+            return truth * 0.5 + relevance * 0.4 + importance * 0.1;
+        }
+    }
 }

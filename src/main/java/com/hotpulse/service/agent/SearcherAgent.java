@@ -24,6 +24,10 @@ public class SearcherAgent {
                 "正在搜索信息源: " + source.getName(), null);
         try {
             List<CandidateItem> candidates = pageFetcher.fetchCandidates(source, keywords);
+            candidates.forEach(candidate -> {
+                candidate.setSourceId(source.getId());
+                candidate.setSourceName(source.getName());
+            });
             tracker.recordStep(executionId, AgentConstants.SEARCHER_AGENT, AgentConstants.STATUS_DONE,
                     "从 " + source.getName() + " 获取到 " + candidates.size() + " 条候选", null);
             return candidates;

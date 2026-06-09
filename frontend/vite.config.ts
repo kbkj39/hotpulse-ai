@@ -24,6 +24,12 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
+      '/hotpulse/socket.io': {
+        target: 'http://localhost:9001',
+        changeOrigin: true,
+        ws: true,
+        rewrite: (path) => path.replace(/^\/hotpulse/, ''),
+      },
     },
   },
 })

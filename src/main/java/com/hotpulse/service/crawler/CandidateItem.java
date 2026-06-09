@@ -12,6 +12,8 @@ public class CandidateItem {
     private String url;
     private Instant publishedAt;
     private String snippet;
+    private Long sourceId;
+    private String sourceName;
 
     public CandidateItem(String title, String url, Instant publishedAt) {
         this.title = title;

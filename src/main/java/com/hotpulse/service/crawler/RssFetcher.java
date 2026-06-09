@@ -25,21 +25,22 @@ public class RssFetcher {
         try {
             SyndFeed feed = fetchFeed(source.getBaseUrl());
 
-            List<CandidateItem> matched = feed.getEntries().stream()
-                    .filter(entry -> matchesKeywords(entry, keywords))
-                    .map(entry -> toCandidateItem(entry))
-                    .collect(Collectors.toList());
-
-            // 关键词匹配为空时，回退到最近 20 条，让 AnalyzerAgent 做语义相关性判断
-            if (matched.isEmpty()) {
-                log.info("RSS keywords matched 0 entries for [{}], falling back to top 20 recent entries", source.getName());
-                return feed.getEntries().stream()
-                        .limit(20)
+            if (hasKeywords(keywords)) {
+                List<CandidateItem> matched = feed.getEntries().stream()
+                        .filter(entry -> matchesKeywords(entry, keywords))
                         .map(entry -> toCandidateItem(entry))
                         .collect(Collectors.toList());
+
+                if (matched.isEmpty()) {
+                    log.info("RSS keywords matched 0 entries for [{}], skip recent-entry fallback", source.getName());
+                }
+                return matched;
             }
 
-            return matched;
+            return feed.getEntries().stream()
+                    .limit(20)
+                    .map(entry -> toCandidateItem(entry))
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("RSS fetch failed for source: {}", source.getName(), e);
             return Collections.emptyList();
@@ -92,9 +93,7 @@ public class RssFetcher {
     }
 
     private boolean matchesKeywords(SyndEntry entry, List<String> keywords) {
-        if (keywords == null || keywords.isEmpty()) {
-            return true;
-        }
+        if (!hasKeywords(keywords)) return true;
         String title = entry.getTitle() != null ? entry.getTitle().toLowerCase() : "";
         // 同时检查 description（摘要），扩大匹配范围
         String description = "";
@@ -103,5 +102,9 @@ public class RssFetcher {
         }
         String combined = title + " " + description;
         return keywords.stream().anyMatch(kw -> combined.contains(kw.toLowerCase()));
+    }
+
+    private boolean hasKeywords(List<String> keywords) {
+        return keywords != null && keywords.stream().anyMatch(kw -> kw != null && !kw.isBlank());
     }
 }

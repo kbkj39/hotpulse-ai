@@ -31,6 +31,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AgentOrchestrator {
 
+    private static final int MAX_CRAWL_CANDIDATES = 20;
+    private static final int MAX_CRAWL_CANDIDATES_PER_SOURCE = 5;
+
     private final PlannerAgent plannerAgent;
     private final SearcherAgent searcherAgent;
     private final CrawlerAgent crawlerAgent;
@@ -248,11 +251,15 @@ public class AgentOrchestrator {
         if (candidates.isEmpty()) return Collections.emptyList();
 
         Long defaultSourceId = sources.isEmpty() ? null : sources.get(0).getId();
+        List<CandidateItem> selectedCandidates = selectCrawlCandidates(candidates);
 
-        List<CompletableFuture<Document>> futures = candidates.stream()
-                .limit(20) // 限制单次最大抓取数量
+        List<CompletableFuture<Document>> futures = selectedCandidates.stream()
                 .map(candidate -> CompletableFuture.supplyAsync(
-                        () -> crawlerAgent.crawl(executionId, candidate.getUrl(), defaultSourceId, candidate.getPublishedAt()),
+                        () -> crawlerAgent.crawl(
+                                executionId,
+                                candidate.getUrl(),
+                                candidate.getSourceId() != null ? candidate.getSourceId() : defaultSourceId,
+                                candidate.getPublishedAt()),
                         virtualThreadExecutor))
                 .collect(Collectors.toList());
 
@@ -266,6 +273,42 @@ public class AgentOrchestrator {
                     }
                 })
                 .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private List<CandidateItem> selectCrawlCandidates(List<CandidateItem> candidates) {
+        Map<String, List<CandidateItem>> bySource = new LinkedHashMap<>();
+        Set<String> seenUrls = new HashSet<>();
+
+        for (CandidateItem candidate : candidates) {
+            if (candidate.getUrl() == null || candidate.getUrl().isBlank()) {
+                continue;
+            }
+            if (!seenUrls.add(candidate.getUrl())) {
+                continue;
+            }
+            String sourceKey = candidate.getSourceId() != null
+                    ? candidate.getSourceId().toString()
+                    : (candidate.getSourceName() != null ? candidate.getSourceName() : "unknown");
+            bySource.computeIfAbsent(sourceKey, ignored -> new ArrayList<>()).add(candidate);
+        }
+
+        List<CandidateItem> selected = new ArrayList<>();
+        int maxPerSource = bySource.size() <= 1
+                ? MAX_CRAWL_CANDIDATES
+                : MAX_CRAWL_CANDIDATES_PER_SOURCE;
+
+        for (List<CandidateItem> sourceCandidates : bySource.values()) {
+            sourceCandidates.stream()
+                    .limit(maxPerSource)
+                    .forEach(selected::add);
+            if (selected.size() >= MAX_CRAWL_CANDIDATES) {
+                break;
+            }
+        }
+
+        return selected.stream()
+                .limit(MAX_CRAWL_CANDIDATES)
                 .collect(Collectors.toList());
     }
 

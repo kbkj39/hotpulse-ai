@@ -13,6 +13,7 @@ import com.hotpulse.repository.MessageRepository;
 import com.hotpulse.repository.SourceRepository;
 import com.hotpulse.service.crawler.CandidateItem;
 import com.hotpulse.service.hotspot.HotspotService;
+import com.hotpulse.service.hotspot.KeywordExpansionService;
 import com.hotpulse.service.iwencai.IwencaiSkillService;
 import com.hotpulse.sse.AgentSseService;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class AgentOrchestrator {
     private final SourceRepository sourceRepository;
     private final IwencaiSkillService iwencaiSkillService;
     private final HotspotService hotspotService;
+    private final KeywordExpansionService keywordExpansionService;
     private final MessageRepository messageRepository;
     private final ObjectMapper objectMapper;
     private final ExecutorService virtualThreadExecutor;
@@ -369,8 +371,16 @@ public class AgentOrchestrator {
      */
     public void executeScheduled(Long executionId, List<String> keywords) {
         try {
+            List<String> originalKeywords = keywords != null ? keywords : java.util.List.of();
+            List<String> expandedKeywords = keywordExpansionService.expand(originalKeywords);
+            List<String> expandedAliases = keywordExpansionService.aliasesOnly(originalKeywords);
+            String keywordText = String.join(", ", originalKeywords);
+            String startMessage = expandedAliases.isEmpty()
+                    ? "定时监控抓取启动，关键词: " + keywordText
+                    : "定时监控抓取启动，关键词: " + keywordText
+                    + "，扩展词: " + String.join(", ", expandedAliases);
             tracker.recordStep(executionId, "ScheduledCrawl", AgentConstants.STATUS_RUNNING,
-                    "定时监控抓取启动，关键词: " + String.join(", ", keywords), null);
+                    startMessage, null);
 
             List<Source> sources = sourceRepository.findByEnabledTrue();
             if (sources.isEmpty()) {
@@ -380,9 +390,9 @@ public class AgentOrchestrator {
                 return;
             }
 
-            List<CandidateItem> candidates = parallelSearch(executionId, sources, keywords);
+            List<CandidateItem> candidates = parallelSearch(executionId, sources, expandedKeywords);
             List<Document> documents = parallelCrawl(executionId, candidates, sources);
-            String query = String.join(" ", keywords);
+            String query = String.join(" ", expandedKeywords);
             List<Map.Entry<Document, AnalyzerAgent.AnalysisResult>> analysisResults =
                     analyze(executionId, documents, query);
             List<Hotspot> hotspots = aggregatorAgent.aggregate(executionId, analysisResults);

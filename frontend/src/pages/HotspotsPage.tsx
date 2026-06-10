@@ -5,11 +5,14 @@ import { HotspotFilterBar } from '@/components/hotspot/HotspotFilter'
 import { HotspotList } from '@/components/hotspot/HotspotList'
 import { MonitorKeywordPanel } from '@/components/hotspot/MonitorKeywordPanel'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+import { HotspotTrendChart } from '@/components/hotspot/HotspotTrendChart'
+import { useState } from 'react'
 
 export function HotspotsPage() {
   const { hotspots, filter, total, setFilter, loading, refetch } = useHotspots()
   const { keywords, loading: keywordsLoading, error: keywordsError, createKeyword, toggleKeyword, deleteKeyword, triggerKeyword, triggerAllKeywords, updateInterval } = useMonitorKeywords()
   useSocket()
+  const [trendInterval, setTrendInterval] = useState<'hour' | 'day'>('hour')
 
   return (
     <div>
@@ -61,6 +64,55 @@ export function HotspotsPage() {
         onUpdateInterval={updateInterval}
         onCrawlDone={refetch}
       />
+      <div style={{ marginTop: '32px', marginBottom: '32px', padding: '20px', border: '1px solid #333', borderRadius: '8px', background: '#0a0a0a' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2
+            style={{
+              fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+              fontWeight: 600,
+              fontSize: '18px',
+              letterSpacing: '-0.02em',
+              color: '#fff',
+              margin: 0,
+            }}
+          >
+            趋势分析
+          </h2>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setTrendInterval('hour')}
+              style={{
+                padding: '6px 16px',
+                background: trendInterval === 'hour' ? '#8884d8' : '#1a1a1a',
+                color: '#fff',
+                border: '1px solid #333',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontFamily: "'Fira Code', monospace",
+              }}
+            >
+              按小时
+            </button>
+            <button
+              onClick={() => setTrendInterval('day')}
+              style={{
+                padding: '6px 16px',
+                background: trendInterval === 'day' ? '#8884d8' : '#1a1a1a',
+                color: '#fff',
+                border: '1px solid #333',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontFamily: "'Fira Code', monospace",
+              }}
+            >
+              按天
+            </button>
+          </div>
+        </div>
+        <HotspotTrendChart interval={trendInterval} />
+      </div>
       <HotspotFilterBar filter={filter} onChange={setFilter} />
       {loading ? <LoadingSpinner /> : <HotspotList hotspots={hotspots} />}
     </div>

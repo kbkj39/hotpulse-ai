@@ -35,6 +35,13 @@ export const api = {
       .get<ApiResult<Hotspot>>(`/hotspots/${id}`)
       .then((r) => r.data.data),
 
+  getHotspotTrends: (interval: 'hour' | 'day' = 'hour') =>
+    instance
+      .get<ApiResult<{ timestamp: string; count: number; avgHotScore: number; avgImportanceScore: number }[]>>('/hotspots/trends', {
+        params: { interval },
+      })
+      .then((r) => r.data.data),
+
   agentQuery: (query: string, conversationId?: string) =>
     instance
       .post<ApiResult<{ executionId: string; conversationId: string; status: string }>>('/agent/query', {

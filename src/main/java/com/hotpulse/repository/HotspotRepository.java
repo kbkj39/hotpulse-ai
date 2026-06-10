@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.time.Instant;
+import java.util.List;
 
 public interface HotspotRepository extends JpaRepository<Hotspot, Long> {
 
@@ -66,4 +68,16 @@ public interface HotspotRepository extends JpaRepository<Hotspot, Long> {
             ORDER BY h.createdAt DESC
             """)
     Page<Hotspot> findByTagAndKeywordOrderByCreatedAtDesc(@Param("tag") String tag, @Param("keyword") String keyword, Pageable pageable);
+
+    @Query(value = """
+            SELECT DATE_TRUNC(:interval, h.created_at) as time_bucket,
+                   COUNT(*) as count,
+                   AVG(h.hot_score) as avg_hot_score,
+                   AVG(h.importance_score) as avg_importance_score
+            FROM hotspots h
+            WHERE h.created_at >= :start_time
+            GROUP BY time_bucket
+            ORDER BY time_bucket
+            """, nativeQuery = true)
+    List<Object[]> getTrendStats(@Param("interval") String interval, @Param("start_time") Instant startTime);
 }

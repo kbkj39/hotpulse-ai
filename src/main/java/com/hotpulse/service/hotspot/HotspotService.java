@@ -1,6 +1,7 @@
 package com.hotpulse.service.hotspot;
 
 import com.hotpulse.dto.HotspotResponse;
+import com.hotpulse.dto.TrendPoint;
 import com.hotpulse.entity.Document;
 import com.hotpulse.entity.Hotspot;
 import com.hotpulse.repository.DocumentRepository;
@@ -16,6 +17,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -94,5 +97,47 @@ public class HotspotService {
         });
 
         return resp;
+    }
+
+    public List<TrendPoint> getTrends(String interval) {
+        String cacheKey = "trends:" + interval;
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        if (cached instanceof List<?> cachedList && !cachedList.isEmpty()) {
+            try {
+                @SuppressWarnings("unchecked")
+                List<TrendPoint> result = (List<TrendPoint>) cachedList;
+                return result;
+            } catch (Exception e) {
+                log.warn("Failed to deserialize cached trends", e);
+            }
+        }
+
+        String pgInterval = switch (interval) {
+            case "hour" -> "hour";
+            case "day" -> "day";
+            default -> "hour";
+        };
+
+        Instant startTime = "day".equals(pgInterval)
+                ? Instant.now().minus(30, ChronoUnit.DAYS)
+                : Instant.now().minus(7, ChronoUnit.DAYS);
+
+        List<Object[]> rows = hotspotRepository.getTrendStats(pgInterval, startTime);
+        List<TrendPoint> points = rows.stream()
+                .map(row -> new TrendPoint(
+                        ((java.sql.Timestamp) row[0]).toInstant(),
+                        ((Number) row[1]).longValue(),
+                        ((Number) row[2]).doubleValue(),
+                        ((Number) row[3]).doubleValue()
+                ))
+                .toList();
+
+        try {
+            redisTemplate.opsForValue().set(cacheKey, points, CACHE_TTL);
+        } catch (Exception e) {
+            log.warn("Failed to cache trends: {}", e.getMessage());
+        }
+
+        return points;
     }
 }

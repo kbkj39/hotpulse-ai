@@ -1,5 +1,9 @@
 package com.hotpulse.service.hotspot;
 
+import com.hotpulse.skill.ExpandKeywordsSkill;
+import com.hotpulse.skill.SkillResult;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -8,10 +12,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class KeywordExpansionService {
 
     private static final int MAX_KEYWORDS = 12;
+
+    private final ExpandKeywordsSkill expandKeywordsSkill;
 
     private static final Map<String, List<String>> ALIASES = Map.ofEntries(
             Map.entry("gpt", List.of("gpt", "chatgpt", "openai", "大模型", "生成式ai", "人工智能")),
@@ -31,9 +39,42 @@ public class KeywordExpansionService {
     );
 
     public List<String> expand(List<String> keywords) {
+        List<String> normalized = normalize(keywords);
+        if (normalized.isEmpty()) {
+            return List.of();
+        }
+
+        // 优先使用 LLM 动态扩展
+        try {
+            SkillResult<List<String>> result = expandKeywordsSkill.execute(
+                    new ExpandKeywordsSkill.Input(normalized, MAX_KEYWORDS));
+            if (result.isOk() && result.data() != null && !result.data().isEmpty()) {
+                log.debug("LLM expanded keywords: {} -> {}", normalized, result.data());
+                return result.data().stream()
+                        .limit(MAX_KEYWORDS)
+                        .toList();
+            }
+        } catch (Exception e) {
+            log.warn("LLM keyword expansion failed, falling back to static aliases: {}", e.getMessage());
+        }
+
+        // 回退到硬编码别名表
+        return expandStatic(normalized);
+    }
+
+    public List<String> aliasesOnly(List<String> keywords) {
+        LinkedHashMap<String, String> originals = new LinkedHashMap<>();
+        normalize(keywords).forEach(keyword -> add(originals, keyword));
+
+        return expand(keywords).stream()
+                .filter(keyword -> !originals.containsKey(keyword.toLowerCase(Locale.ROOT)))
+                .toList();
+    }
+
+    private List<String> expandStatic(List<String> normalized) {
         LinkedHashMap<String, String> expanded = new LinkedHashMap<>();
 
-        for (String keyword : normalize(keywords)) {
+        for (String keyword : normalized) {
             add(expanded, keyword);
             ALIASES.getOrDefault(keyword.toLowerCase(Locale.ROOT), List.of())
                     .forEach(alias -> add(expanded, alias));
@@ -44,15 +85,6 @@ public class KeywordExpansionService {
 
         return expanded.values().stream()
                 .limit(MAX_KEYWORDS)
-                .toList();
-    }
-
-    public List<String> aliasesOnly(List<String> keywords) {
-        LinkedHashMap<String, String> originals = new LinkedHashMap<>();
-        normalize(keywords).forEach(keyword -> add(originals, keyword));
-
-        return expand(keywords).stream()
-                .filter(keyword -> !originals.containsKey(keyword.toLowerCase(Locale.ROOT)))
                 .toList();
     }
 

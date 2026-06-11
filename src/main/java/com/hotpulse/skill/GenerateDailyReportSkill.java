@@ -2,6 +2,7 @@ package com.hotpulse.skill;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotpulse.dto.DailyReportRequest;
 import com.hotpulse.entity.Document;
 import com.hotpulse.entity.Hotspot;
 import com.hotpulse.repository.DocumentRepository;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class GenerateDailyReportSkill implements Skill<List<Hotspot>, String> {
+public class GenerateDailyReportSkill implements Skill<DailyReportRequest, String> {
 
     private final ChatClient chatClient;
     private final DocumentRepository documentRepository;
@@ -44,10 +45,12 @@ public class GenerateDailyReportSkill implements Skill<List<Hotspot>, String> {
     }
 
     @Override
-    public SkillResult<String> execute(List<Hotspot> hotspots) {
+    public SkillResult<String> execute(DailyReportRequest request) {
         long start = System.currentTimeMillis();
         String traceId = MDC.get("traceId");
         try {
+            List<Hotspot> hotspots = request.getHotspots();
+
             // 批量加载关联文档，避免 N+1 查询
             List<Long> docIds = hotspots.stream().map(Hotspot::getDocumentId).toList();
             Map<Long, Document> docMap = documentRepository.findAllById(docIds)
@@ -87,6 +90,7 @@ public class GenerateDailyReportSkill implements Skill<List<Hotspot>, String> {
             }
 
             String prompt = loadPromptTemplate("prompts/daily_report.st")
+                    .replace("{{reportDate}}", request.getReportDate().toString())
                     .replace("{{hotspots}}", hotspotText);
 
             String report = chatClient.prompt()

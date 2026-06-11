@@ -14,6 +14,16 @@ public interface HotspotRepository extends JpaRepository<Hotspot, Long> {
     Page<Hotspot> findAll(Pageable pageable);
 
     @Query("""
+            SELECT h FROM Hotspot h
+            WHERE h.createdAt >= :start AND h.createdAt < :end
+            ORDER BY h.importanceScore DESC
+            """)
+    Page<Hotspot> findByCreatedAtBetweenOrderByImportanceScoreDesc(
+            @Param("start") Instant start,
+            @Param("end") Instant end,
+            Pageable pageable);
+
+    @Query("""
             SELECT h FROM Hotspot h, Document d
             WHERE d.id = h.documentId
               AND (CAST(:tag AS string) IS NULL OR h.tags LIKE CONCAT('%', CAST(:tag AS string), '%'))

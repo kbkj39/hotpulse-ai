@@ -2,6 +2,7 @@ package com.hotpulse.service.hotspot;
 
 import com.hotpulse.dto.DailyReportResponse;
 import com.hotpulse.entity.DailyReport;
+import com.hotpulse.entity.DailyReportStatus;
 import com.hotpulse.repository.DailyReportRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,8 @@ public class DailyReportService {
         resp.setContent(report.getContent());
         resp.setHotspotCount(report.getHotspotCount());
         resp.setGeneratedAt(report.getGeneratedAt());
+        resp.setStatus(report.getStatus() != null ? report.getStatus().name() : DailyReportStatus.PENDING.name());
+        resp.setErrorMessage(report.getErrorMessage());
         return resp;
     }
 }

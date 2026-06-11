@@ -30,6 +30,13 @@ public class DailyReport {
     @Column(name = "generated_at")
     private Instant generatedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DailyReportStatus status;
+
+    @Column(name = "error_message", columnDefinition = "TEXT")
+    private String errorMessage;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;

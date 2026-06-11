@@ -13,4 +13,6 @@ public class DailyReportResponse {
     private String content;
     private Integer hotspotCount;
     private Instant generatedAt;
+    private String status;
+    private String errorMessage;
 }

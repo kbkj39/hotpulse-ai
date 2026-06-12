@@ -1,11 +1,13 @@
-﻿import { useState, useRef } from 'react'
+﻿import { useState, type ReactNode } from 'react'
 
 interface ChatInputProps {
   onSend: (text: string) => void
   disabled?: boolean
+  placeholder?: string
+  pinnedHotspotBar?: ReactNode
 }
 
-export function ChatInput({ onSend, disabled }: ChatInputProps) {
+export function ChatInput({ onSend, disabled, placeholder, pinnedHotspotBar }: ChatInputProps) {
   const [text, setText] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -27,7 +29,9 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   const canSend = !disabled && text.trim().length > 0
 
   return (
-    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+    <div style={{ marginTop: '8px' }}>
+      {pinnedHotspotBar}
+      <div style={{ display: 'flex', gap: '8px', marginTop: pinnedHotspotBar ? '8px' : 0 }}>
       <textarea
         ref={textareaRef}
         value={text}
@@ -35,7 +39,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         onKeyDown={handleKeyDown}
         disabled={disabled}
         rows={2}
-        placeholder="输入问题，按 Enter 发送"
+        placeholder={placeholder ?? '输入问题，按 Enter 发送'}
         style={{
           flex: 1,
           border: '2px solid #1F1F1F',
@@ -71,6 +75,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
       >
         SEND
       </button>
+      </div>
     </div>
   )
 }

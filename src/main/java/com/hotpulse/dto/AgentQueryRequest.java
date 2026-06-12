@@ -12,4 +12,7 @@ public class AgentQueryRequest {
     private String query;
 
     private String conversationId;
+
+    /** 可选：固定讨论的热点 ID，走热点上下文对话管线 */
+    private Long hotspotId;
 }

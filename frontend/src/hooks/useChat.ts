@@ -5,7 +5,7 @@ import { useAgentExecutionStore } from '@/store/agentExecutionStore'
 import type { Message } from '@/types/chat'
 
 export function useChat() {
-  const { messages, conversationId, addMessage, setConversationId } = useChatStore()
+  const { messages, conversationId, pinnedHotspot, addMessage, setConversationId } = useChatStore()
   const startExecution = useAgentExecutionStore((s) => s.start)
 
   const sendMessage = useCallback(
@@ -14,7 +14,11 @@ export function useChat() {
       addMessage(userMessage)
 
       try {
-        const result = await api.agentQuery(query, conversationId ?? undefined)
+        const result = await api.agentQuery(
+          query,
+          conversationId ?? undefined,
+          pinnedHotspot?.id,
+        )
         if (!conversationId && result.conversationId) {
           setConversationId(result.conversationId)
         }
@@ -26,7 +30,7 @@ export function useChat() {
         addMessage({ role: 'assistant', content: '抱歉，请求失败，请稍后重试。' })
       }
     },
-    [conversationId, addMessage, setConversationId, startExecution]
+    [conversationId, pinnedHotspot?.id, addMessage, setConversationId, startExecution]
   )
 
   const addAssistantMessage = useCallback(
@@ -36,5 +40,5 @@ export function useChat() {
     [addMessage]
   )
 
-  return { messages, conversationId, sendMessage, addAssistantMessage }
+  return { messages, conversationId, pinnedHotspot, sendMessage, addAssistantMessage }
 }

@@ -1,13 +1,16 @@
-﻿import { useState } from 'react'
+﻿import { useState, type MouseEvent } from 'react'
 import type { Hotspot } from '@/types/hotspot'
 import { ScoreBadge } from '@/components/common/ScoreBadge'
 import { SourceTag } from '@/components/common/SourceTag'
 
 interface HotspotCardProps {
   hotspot: Hotspot
+  selectable?: boolean
+  selected?: boolean
+  onSelect?: (hotspot: Hotspot) => void
 }
 
-export function HotspotCard({ hotspot }: HotspotCardProps) {
+export function HotspotCard({ hotspot, selectable, selected, onSelect }: HotspotCardProps) {
   const isUrl = (text?: string) => {
     if (!text) return false
     try {
@@ -33,15 +36,35 @@ export function HotspotCard({ hotspot }: HotspotCardProps) {
   }
   return (
     <div
+      role={selectable ? 'button' : undefined}
+      tabIndex={selectable ? 0 : undefined}
+      onClick={selectable ? () => onSelect?.(hotspot) : undefined}
+      onKeyDown={
+        selectable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onSelect?.(hotspot)
+              }
+            }
+          : undefined
+      }
       style={{
         borderTop: '1px solid #1F1F1F',
         padding: '16px 0',
-        transition: 'background 150ms ease',
-        cursor: 'default',
+        transition: 'background 150ms ease, border-color 150ms ease',
+        cursor: selectable ? 'pointer' : 'default',
         position: 'relative',
+        background: selected ? '#0D120D' : 'transparent',
+        outline: selected ? '1px solid #9CE6A3' : 'none',
+        outlineOffset: '-1px',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = '#0A0A0A')}
-      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      onMouseEnter={(e) => {
+        if (!selected) e.currentTarget.style.background = '#0A0A0A'
+      }}
+      onMouseLeave={(e) => {
+        if (!selected) e.currentTarget.style.background = 'transparent'
+      }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
         <div style={{ flex: 1 }}>
@@ -72,7 +95,10 @@ export function HotspotCard({ hotspot }: HotspotCardProps) {
           </span>
 
           {/* link button with hover tooltip */}
-          <LinkButton url={hotspot.url} />
+          <LinkButton
+            url={hotspot.url}
+            onNavigate={(e) => e.stopPropagation()}
+          />
         </div>
       </div>
 
@@ -133,7 +159,7 @@ export function HotspotCard({ hotspot }: HotspotCardProps) {
   )
 }
 
-function LinkButton({ url }: { url?: string }) {
+function LinkButton({ url, onNavigate }: { url?: string; onNavigate?: (e: MouseEvent) => void }) {
   const [hover, setHover] = useState(false)
   if (!url) return null
   return (
@@ -141,7 +167,10 @@ function LinkButton({ url }: { url?: string }) {
       <button
         aria-label="打开原文"
         title="打开原文"
-        onClick={() => window.open(url, '_blank')}
+        onClick={(e) => {
+          onNavigate?.(e)
+          window.open(url, '_blank')
+        }}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         style={{

@@ -34,6 +34,7 @@ public class AgentOrchestrator {
 
     private static final int MAX_CRAWL_CANDIDATES = 20;
     private static final int MAX_CRAWL_CANDIDATES_PER_SOURCE = 5;
+    private static final int HOTSPOT_CONTEXT_MAX_CHARS = 4000;
 
     private final PlannerAgent plannerAgent;
     private final SearcherAgent searcherAgent;
@@ -53,8 +54,18 @@ public class AgentOrchestrator {
     private final ChatClient chatClient;
 
     public void execute(Long executionId, String query, Long conversationId) {
+        execute(executionId, query, conversationId, null);
+    }
+
+    public void execute(Long executionId, String query, Long conversationId, Long hotspotId) {
         try {
-            log.info("AgentOrchestrator starting executionId={} query={}", executionId, query);
+            log.info("AgentOrchestrator starting executionId={} query={} hotspotId={}",
+                    executionId, query, hotspotId);
+
+            if (hotspotId != null) {
+                executeHotspotChat(executionId, query, conversationId, hotspotId);
+                return;
+            }
 
             // Step 1: Planner（含意图分类）
             TaskPlanDto plan = plannerAgent.plan(executionId, query);
@@ -131,51 +142,8 @@ public class AgentOrchestrator {
         tracker.recordStep(executionId, "ChatAgent", AgentConstants.STATUS_RUNNING,
                 "正在生成对话回答...", null);
         try {
-            // 加载对话历史（排除刚入库的当前 user 消息，取倒数 10 条提供上下文）
-            String historyContext = "";
-            if (conversationId != null) {
-                List<com.hotpulse.entity.Message> history =
-                        messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId);
-                // 最后一条是当前 user 消息，截掉；最多取前 10 条避免超出 token 限制
-                List<com.hotpulse.entity.Message> prevMessages = history.size() > 1
-                        ? history.subList(Math.max(0, history.size() - 11), history.size() - 1)
-                        : Collections.emptyList();
-                if (!prevMessages.isEmpty()) {
-                    historyContext = prevMessages.stream()
-                            .map(m -> ("user".equals(m.getRole()) ? "用户" : "助手") + ": " + m.getContent())
-                            .collect(Collectors.joining("\n"));
-                }
-            }
-
-            String promptText;
-            if (!historyContext.isEmpty()) {
-                promptText = """
-                        你是 HotPulse AI，一个专注财经热点的智能助手。以下是本次对话的历史记录：
-
-                        %s
-
-                        用户: %s
-
-                        请基于对话历史，以友好、简洁的方式回答用户。
-                        """.formatted(historyContext, query);
-            } else {
-                promptText = """
-                        你是 HotPulse AI，一个专注财经热点的智能助手。
-                        用户消息：%s
-                        请以友好、简洁的方式回答。
-                        """.formatted(query);
-            }
-
-            String answer;
-            try {
-                answer = chatClient.prompt()
-                        .user(promptText)
-                        .call()
-                        .content();
-            } catch (Exception e) {
-                log.error("DirectChat LLM call failed", e);
-                answer = "抱歉，生成回答时发生错误：" + e.getMessage();
-            }
+            String promptText = buildDirectChatPrompt(query, conversationId, null);
+            String answer = callChatLlm(promptText);
 
             tracker.recordStep(executionId, "ChatAgent", AgentConstants.STATUS_DONE,
                     "已生成对话回答", null);
@@ -190,6 +158,172 @@ public class AgentOrchestrator {
         } catch (Exception e) {
             log.error("executeDirectChat failed for executionId={}", executionId, e);
             throw e;
+        }
+    }
+
+    /**
+     * 热点上下文对话：基于已选热点资料 + 对话历史回答，不触发搜索/抓取管线。
+     */
+    private void executeHotspotChat(Long executionId, String query, Long conversationId, Long hotspotId) {
+        tracker.recordStep(executionId, "HotspotChat", AgentConstants.STATUS_RUNNING,
+                "正在加载热点上下文...", null);
+        try {
+            HotspotResponse hotspot = hotspotService.getHotspotDetail(hotspotId);
+            String hotspotContext = buildHotspotContextBlock(hotspot);
+            String promptText = buildDirectChatPrompt(query, conversationId, hotspotContext);
+
+            tracker.recordStep(executionId, "HotspotChat", AgentConstants.STATUS_RUNNING,
+                    "正在基于热点上下文生成回答...", null);
+
+            String answer = callChatLlm(promptText);
+
+            tracker.recordStep(executionId, "HotspotChat", AgentConstants.STATUS_DONE,
+                    "已基于热点上下文生成回答", null);
+
+            if (conversationId != null) {
+                saveAssistantMessage(conversationId, answer, java.util.List.of());
+            }
+
+            executionService.markDone(executionId);
+            sendFinalEvent(executionId, java.util.List.of(), answer);
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            log.warn("Hotspot not found for hotspotId={}", hotspotId);
+            String errorAnswer = "抱歉，所选热点不存在或已被删除。";
+            tracker.recordStep(executionId, "HotspotChat", AgentConstants.STATUS_FAILED,
+                    errorAnswer, null);
+            if (conversationId != null) {
+                saveAssistantMessage(conversationId, errorAnswer, java.util.List.of());
+            }
+            executionService.markFailed(executionId);
+            sendFinalEvent(executionId, java.util.List.of(), errorAnswer);
+        } catch (Exception e) {
+            log.error("executeHotspotChat failed for executionId={} hotspotId={}", executionId, hotspotId, e);
+            throw e;
+        }
+    }
+
+    private String buildDirectChatPrompt(String query, Long conversationId, String hotspotContextBlock) {
+        String historyContext = buildHistoryContext(conversationId);
+        boolean hasHotspot = hotspotContextBlock != null && !hotspotContextBlock.isBlank();
+        boolean hasHistory = !historyContext.isBlank();
+
+        if (hasHotspot && hasHistory) {
+            return """
+                    你是 HotPulse AI，一个专注财经热点的智能助手。用户正在讨论以下热点，请优先基于热点资料与对话历史回答，不要编造未提供的信息。
+
+                    【当前热点资料】
+                    %s
+
+                    【对话历史】
+                    %s
+
+                    用户: %s
+
+                    请基于热点资料与对话历史，以友好、简洁的方式回答用户。
+                    """.formatted(hotspotContextBlock, historyContext, query);
+        }
+        if (hasHotspot) {
+            return """
+                    你是 HotPulse AI，一个专注财经热点的智能助手。用户正在讨论以下热点，请基于资料回答，不要编造未提供的信息。
+
+                    【当前热点资料】
+                    %s
+
+                    用户: %s
+
+                    请基于热点资料，以友好、简洁的方式回答用户。
+                    """.formatted(hotspotContextBlock, query);
+        }
+        if (hasHistory) {
+            return """
+                    你是 HotPulse AI，一个专注财经热点的智能助手。以下是本次对话的历史记录：
+
+                    %s
+
+                    用户: %s
+
+                    请基于对话历史，以友好、简洁的方式回答用户。
+                    """.formatted(historyContext, query);
+        }
+        return """
+                你是 HotPulse AI，一个专注财经热点的智能助手。
+                用户消息：%s
+                请以友好、简洁的方式回答。
+                """.formatted(query);
+    }
+
+    private String buildHistoryContext(Long conversationId) {
+        if (conversationId == null) {
+            return "";
+        }
+        List<com.hotpulse.entity.Message> history =
+                messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId);
+        List<com.hotpulse.entity.Message> prevMessages = history.size() > 1
+                ? history.subList(Math.max(0, history.size() - 11), history.size() - 1)
+                : Collections.emptyList();
+        if (prevMessages.isEmpty()) {
+            return "";
+        }
+        return prevMessages.stream()
+                .map(m -> ("user".equals(m.getRole()) ? "用户" : "助手") + ": " + m.getContent())
+                .collect(Collectors.joining("\n"));
+    }
+
+    private String buildHotspotContextBlock(HotspotResponse hotspot) {
+        String title = hotspot.getTitle() != null && !hotspot.getTitle().isBlank()
+                ? hotspot.getTitle() : "（无标题）";
+        String summary = hotspot.getSummary() != null ? hotspot.getSummary() : "";
+        String source = hotspot.getSource() != null ? hotspot.getSource() : "";
+        String url = hotspot.getUrl() != null ? hotspot.getUrl() : "";
+        String evidence = hotspot.getAnalysisEvidence() != null ? hotspot.getAnalysisEvidence() : "";
+        String fullText = truncate(hotspot.getFullText(), HOTSPOT_CONTEXT_MAX_CHARS);
+
+        return """
+                标题: %s
+                来源: %s
+                链接: %s
+                摘要: %s
+                真实性评分: %s
+                相关性评分: %s
+                重要性评分: %s
+                分析证据: %s
+                正文摘录:
+                %s
+                """.formatted(
+                title,
+                source,
+                url,
+                summary,
+                formatScore(hotspot.getTruthScore()),
+                formatScore(hotspot.getRelevanceScore()),
+                formatScore(hotspot.getImportanceScore()),
+                evidence,
+                fullText);
+    }
+
+    private String formatScore(Double score) {
+        return score != null ? String.format("%.2f", score) : "N/A";
+    }
+
+    private String truncate(String text, int maxChars) {
+        if (text == null || text.isBlank()) {
+            return "（无正文）";
+        }
+        if (text.length() <= maxChars) {
+            return text;
+        }
+        return text.substring(0, maxChars) + "…";
+    }
+
+    private String callChatLlm(String promptText) {
+        try {
+            return chatClient.prompt()
+                    .user(promptText)
+                    .call()
+                    .content();
+        } catch (Exception e) {
+            log.error("Chat LLM call failed", e);
+            return "抱歉，生成回答时发生错误：" + e.getMessage();
         }
     }
 

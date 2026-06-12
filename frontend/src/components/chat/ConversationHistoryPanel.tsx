@@ -23,7 +23,8 @@ function formatTime(iso: string | undefined) {
 }
 
 export function ConversationHistoryPanel({ onLoadConversation }: ConversationHistoryPanelProps) {
-  const { conversations, conversationId, setConversations, startNewConversation } = useChatStore()
+  const { conversations, conversationId, setConversations, startNewConversation, setPinnedHotspot } =
+    useChatStore()
 
   const loadConversations = useCallback(async () => {
     try {
@@ -43,6 +44,7 @@ export function ConversationHistoryPanel({ onLoadConversation }: ConversationHis
     try {
       const messages = await api.getConversationMessages(conv.id)
       onLoadConversation(String(conv.id))
+      setPinnedHotspot(null)
       useChatStore.setState({ messages, conversationId: String(conv.id) })
     } catch (err) {
       console.error('Failed to load conversation messages:', err)

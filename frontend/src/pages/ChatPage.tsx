@@ -6,15 +6,19 @@ import { ChatWindow } from '@/components/chat/ChatWindow'
 import { ChatInput } from '@/components/chat/ChatInput'
 import { AgentProgressPanel } from '@/components/chat/AgentProgressPanel'
 import { ConversationHistoryPanel } from '@/components/chat/ConversationHistoryPanel'
+import { PinnedHotspotBar } from '@/components/chat/PinnedHotspotBar'
 import { useHotspots } from '@/hooks/useHotspots'
 import { useSocket } from '@/hooks/useSocket'
+import { useChatStore } from '@/store/chatStore'
+import type { Hotspot } from '@/types/hotspot'
 import { HotspotFilterBar } from '@/components/hotspot/HotspotFilter'
 import { HotspotList } from '@/components/hotspot/HotspotList'
 
 export function ChatPage() {
-  const { messages, sendMessage, addAssistantMessage } = useChat()
+  const { messages, pinnedHotspot, sendMessage, addAssistantMessage } = useChat()
   const { steps, finalAnswer, isError, isRunning } = useAgentExecution(null)
   const resetExecution = useAgentExecutionStore((s) => s.reset)
+  const setPinnedHotspot = useChatStore((s) => s.setPinnedHotspot)
   const { hotspots, filter, total, setFilter, loading } = useHotspots()
   useSocket()
 
@@ -35,9 +39,13 @@ export function ChatPage() {
   }
 
   const handleLoadConversation = (conversationId: string) => {
-    // 切换会话后重置执行状态
     resetExecution()
+    setPinnedHotspot(null)
     console.debug('Switched to conversation', conversationId)
+  }
+
+  const handleHotspotSelect = (hotspot: Hotspot) => {
+    setPinnedHotspot(pinnedHotspot?.id === hotspot.id ? null : hotspot)
   }
 
   return (
@@ -88,7 +96,19 @@ export function ChatPage() {
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           <ChatWindow messages={messages} />
           <AgentProgressPanel steps={steps} />
-          <ChatInput onSend={handleSend} disabled={isRunning} />
+          <ChatInput
+            onSend={handleSend}
+            disabled={isRunning}
+            placeholder={pinnedHotspot ? '针对当前热点提问…' : undefined}
+            pinnedHotspotBar={
+              pinnedHotspot ? (
+                <PinnedHotspotBar
+                  hotspot={pinnedHotspot}
+                  onClear={() => setPinnedHotspot(null)}
+                />
+              ) : undefined
+            }
+          />
         </div>
 
         {/* Right hotspots sidebar */}
@@ -101,7 +121,16 @@ export function ChatPage() {
             <HotspotFilterBar filter={filter} onChange={setFilter} />
           </div>
           <div style={{ height: '100%', overflowY: 'auto' }}>
-            {loading ? <div style={{ padding: '24px' }}>加载中…</div> : <HotspotList hotspots={hotspots} />}
+            {loading ? (
+              <div style={{ padding: '24px' }}>加载中…</div>
+            ) : (
+              <HotspotList
+                hotspots={hotspots}
+                selectable
+                selectedHotspotId={pinnedHotspot?.id ?? null}
+                onSelectHotspot={handleHotspotSelect}
+              />
+            )}
           </div>
         </div>
       </div>

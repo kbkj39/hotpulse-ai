@@ -3,9 +3,17 @@ import { HotspotCard } from './HotspotCard'
 
 interface HotspotListProps {
   hotspots: Hotspot[]
+  selectable?: boolean
+  selectedHotspotId?: number | null
+  onSelectHotspot?: (hotspot: Hotspot) => void
 }
 
-export function HotspotList({ hotspots }: HotspotListProps) {
+export function HotspotList({
+  hotspots,
+  selectable,
+  selectedHotspotId,
+  onSelectHotspot,
+}: HotspotListProps) {
   if (hotspots.length === 0) {
     return (
       <p
@@ -27,7 +35,13 @@ export function HotspotList({ hotspots }: HotspotListProps) {
   return (
     <div style={{ borderBottom: '1px solid #1F1F1F' }}>
       {hotspots.map((h) => (
-        <HotspotCard key={h.id} hotspot={h} />
+        <HotspotCard
+          key={h.id}
+          hotspot={h}
+          selectable={selectable}
+          selected={selectedHotspotId === h.id}
+          onSelect={onSelectHotspot}
+        />
       ))}
     </div>
   )

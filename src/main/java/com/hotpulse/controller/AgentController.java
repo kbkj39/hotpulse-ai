@@ -73,8 +73,9 @@ public class AgentController {
 
         // 异步启动 Agent 管线（虚拟线程）
         final Long finalConversationId = conversationId;
+        final Long hotspotId = request.getHotspotId();
         CompletableFuture.runAsync(
-                () -> agentOrchestrator.execute(executionId, request.getQuery(), finalConversationId),
+                () -> agentOrchestrator.execute(executionId, request.getQuery(), finalConversationId, hotspotId),
                 virtualThreadExecutor
         );
 

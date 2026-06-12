@@ -42,11 +42,12 @@ export const api = {
       })
       .then((r) => r.data.data),
 
-  agentQuery: (query: string, conversationId?: string) =>
+  agentQuery: (query: string, conversationId?: string, hotspotId?: number) =>
     instance
       .post<ApiResult<{ executionId: string; conversationId: string; status: string }>>('/agent/query', {
         query,
         conversationId,
+        hotspotId,
       })
       .then((r) => r.data.data),
 

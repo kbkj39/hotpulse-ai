@@ -1,19 +1,19 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/hotpulse
-    username: hotpulse
-    password: hotpulse123
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/hotpulse}
+    username: ${SPRING_DATASOURCE_USERNAME:hotpulse}
+    password: ${SPRING_DATASOURCE_PASSWORD:hotpulse123}
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
 
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: hotpulse
-    password: hotpulse123
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:hotpulse}
+    password: ${RABBITMQ_PASSWORD:hotpulse123}
 
   jpa:
     show-sql: true

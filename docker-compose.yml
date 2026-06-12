@@ -61,6 +61,12 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/hotpulse
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-hotpulse}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-hotpulse123}
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-hotpulse}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-hotpulse123}
       - SERVER_ADDRESS=0.0.0.0
       - SOCKETIO_PORT=9001
       - SERVER_PORT=8090
@@ -69,6 +75,9 @@ services:
       - SOPHNET_CHAT_COMPLETIONS_PATH=${SOPHNET_CHAT_COMPLETIONS_PATH:-/chat/completions}
       - SOPHNET_CHAT_MODEL=${SOPHNET_CHAT_MODEL:-DeepSeek-v3}
       - HOTPULSE_RAG_ENABLED=${HOTPULSE_RAG_ENABLED:-false}
+      - AGENT_SEARCHER_MAX_PARALLEL=${AGENT_SEARCHER_MAX_PARALLEL:-5}
+      - AGENT_CRAWLER_MAX_PARALLEL=${AGENT_CRAWLER_MAX_PARALLEL:-10}
+      - AGENT_TOKEN_BUDGET_PER_EXECUTION=${AGENT_TOKEN_BUDGET_PER_EXECUTION:-50000}
     depends_on:
       postgres:
         condition: service_healthy
@@ -76,6 +85,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      rsshub:
+        condition: service_started
 
   rsshub:
     image: diygod/rsshub:latest

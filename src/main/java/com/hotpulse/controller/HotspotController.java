@@ -27,14 +27,14 @@ public class HotspotController {
         return Result.ok(hotspotService.getHotspots(sort, page, limit, tag, keyword));
     }
 
-    @GetMapping("/{id}")
-    public Result<HotspotResponse> getHotspotDetail(@PathVariable Long id) {
-        return Result.ok(hotspotService.getHotspotDetail(id));
-    }
-
     @GetMapping("/trends")
     public Result<List<TrendPoint>> getTrends(
             @RequestParam(defaultValue = "hour") String interval) {
         return Result.ok(hotspotService.getTrends(interval));
+    }
+
+    @GetMapping("/{id}")
+    public Result<HotspotResponse> getHotspotDetail(@PathVariable Long id) {
+        return Result.ok(hotspotService.getHotspotDetail(id));
     }
 }

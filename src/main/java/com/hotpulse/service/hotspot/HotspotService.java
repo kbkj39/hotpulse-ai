@@ -16,9 +16,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -125,10 +130,10 @@ public class HotspotService {
         List<Object[]> rows = hotspotRepository.getTrendStats(pgInterval, startTime);
         List<TrendPoint> points = rows.stream()
                 .map(row -> new TrendPoint(
-                        ((java.sql.Timestamp) row[0]).toInstant(),
-                        ((Number) row[1]).longValue(),
-                        ((Number) row[2]).doubleValue(),
-                        ((Number) row[3]).doubleValue()
+                        toInstant(row[0]),
+                        toLong(row[1]),
+                        toDouble(row[2]),
+                        toDouble(row[3])
                 ))
                 .toList();
 
@@ -139,5 +144,25 @@ public class HotspotService {
         }
 
         return points;
+    }
+
+    private static Instant toInstant(Object value) {
+        return switch (value) {
+            case null -> Instant.EPOCH;
+            case Instant instant -> instant;
+            case OffsetDateTime offsetDateTime -> offsetDateTime.toInstant();
+            case LocalDateTime localDateTime -> localDateTime.toInstant(ZoneOffset.UTC);
+            case Timestamp timestamp -> timestamp.toInstant();
+            case Date date -> date.toInstant();
+            default -> throw new IllegalArgumentException("Unexpected timestamp type: " + value.getClass());
+        };
+    }
+
+    private static long toLong(Object value) {
+        return value instanceof Number number ? number.longValue() : 0L;
+    }
+
+    private static double toDouble(Object value) {
+        return value instanceof Number number ? number.doubleValue() : 0.0;
     }
 }

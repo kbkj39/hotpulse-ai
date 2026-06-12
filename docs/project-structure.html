@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HotPulse AI — 项目结构图</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111;
+      --surface-2: #161616;
+      --border: #222;
+      --text: #e8e8e8;
+      --muted: #666;
+      --accent: #ff4d4d;
+      --backend: #3b82f6;
+      --frontend: #22c55e;
+      --infra: #a855f7;
+      --data: #f59e0b;
+      --mono: "Fira Code", "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+      --sans: "Segoe UI", "Noto Sans SC", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 32px 40px 24px;
+      background: linear-gradient(180deg, #121212 0%, var(--bg) 100%);
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    header h1 span { color: var(--accent); }
+
+    header p {
+      color: var(--muted);
+      margin-top: 8px;
+      max-width: 720px;
+      font-size: 0.95rem;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .meta-item {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 40px 64px;
+    }
+
+    section { margin-bottom: 48px; }
+
+    h2 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Architecture diagram */
+    .arch {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 900px) {
+      .arch { grid-template-columns: 1fr 1fr; }
+      .arch-flow { grid-column: 1 / -1; }
+    }
+
+    .arch-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .arch-card h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot.backend { background: var(--backend); }
+    .dot.frontend { background: var(--frontend); }
+    .dot.infra { background: var(--infra); }
+    .dot.data { background: var(--data); }
+
+    .arch-card ul {
+      list-style: none;
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+
+    .arch-card li {
+      padding: 3px 0;
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .arch-card li::before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 24px 16px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .flow-node {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      white-space: nowrap;
+    }
+
+    .flow-node.src { border-color: var(--data); color: var(--data); }
+    .flow-node.proc { border-color: var(--backend); color: var(--backend); }
+    .flow-node.ai { border-color: var(--accent); color: var(--accent); }
+    .flow-node.ui { border-color: var(--frontend); color: var(--frontend); }
+
+    .flow-arrow {
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* Tree */
+    .tree-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tree-toolbar button {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      padding: 6px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tree-toolbar button:hover {
+      border-color: #444;
+      color: var(--text);
+    }
+
+    .tree {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      overflow-x: auto;
+    }
+
+    .tree ul {
+      list-style: none;
+      padding-left: 20px;
+    }
+
+    .tree > ul { padding-left: 0; }
+
+    .tree li {
+      position: relative;
+      padding: 2px 0;
+    }
+
+    .tree .node {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: default;
+      border-radius: 3px;
+      padding: 1px 4px;
+    }
+
+    .tree .node.dir { cursor: pointer; }
+    .tree .node.dir:hover { background: #1a1a1a; }
+
+    .tree .node.dir::before {
+      content: "▾";
+      display: inline-block;
+      width: 12px;
+      color: var(--muted);
+      font-size: 0.7rem;
+      transition: transform 0.15s;
+    }
+
+    .tree .node.dir.collapsed::before {
+      transform: rotate(-90deg);
+    }
+
+    .tree .node.dir.collapsed + ul { display: none; }
+
+    .icon { font-size: 0.85rem; }
+
+    .name { color: var(--text); }
+    .name.root { color: var(--accent); font-weight: 600; }
+    .name.dir-name { color: #ccc; }
+    .name.file-java { color: #7dd3fc; }
+    .name.file-ts { color: #86efac; }
+    .name.file-tsx { color: #86efac; }
+    .name.file-yml { color: #fde68a; }
+    .name.file-sql { color: #fdba74; }
+    .name.file-st { color: #c4b5fd; }
+    .name.file-md { color: #94a3b8; }
+    .name.file-config { color: var(--muted); }
+
+    .desc {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      color: #555;
+      margin-left: 4px;
+    }
+
+    /* Module table */
+    .modules {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .module {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .module h4 {
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .module p {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .module .path {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: #444;
+      margin-top: 8px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      color: #333;
+      font-size: 0.75rem;
+      font-family: var(--mono);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span>HotPulse AI</span> 项目结构图</h1>
+    <p>基于 Spring Boot + React/Vite 的热点监测与智能助手平台。下图展示仓库目录结构、模块职责与核心数据流。</p>
+    <div class="meta">
+      <span class="meta-item">后端 Java 98 文件</span>
+      <span class="meta-item">前端 TS/TSX 40+ 文件</span>
+      <span class="meta-item">Flyway V1–V10</span>
+      <span class="meta-item">生成日期 2026-06-12</span>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>核心数据流</h2>
+      <div class="arch">
+        <div class="arch-flow flow">
+          <span class="flow-node src">信息源 RSS/网页</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node proc">CrawlScheduleJob</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node proc">Hotspot 评分入库</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node ui">HotspotsPage</span>
+          <span class="flow-arrow">│</span>
+          <span class="flow-node ai">DailyReportGenerator</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node ui">DailyReportPage</span>
+        </div>
+        <div class="arch-flow flow">
+          <span class="flow-node ui">ChatPage</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node proc">AgentOrchestrator</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node ai">Planner / Crawler / Searcher / Analyzer</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node ai">Skills + RAG</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node ui">SSE 实时推送</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>模块概览</h2>
+      <div class="modules">
+        <div class="module">
+          <h4>🕷 数据采集</h4>
+          <p>RSS、Jsoup、Playwright 多方式抓取；30 分钟定时任务；关键词 LLM 扩展。</p>
+          <div class="path">service/crawler · job/CrawlScheduleJob</div>
+        </div>
+        <div class="module">
+          <h4>🔥 热点引擎</h4>
+          <p>热点评分、趋势统计、Socket.IO 推送、监控关键词管理。</p>
+          <div class="path">service/hotspot · controller/HotspotController</div>
+        </div>
+        <div class="module">
+          <h4>📋 每日日报</h4>
+          <p>异步 LLM 生成（@Async）；状态机 PENDING→GENERATING→READY/FAILED；手动重跑 API。</p>
+          <div class="path">service/hotspot/DailyReportGenerator</div>
+        </div>
+        <div class="module">
+          <h4>🤖 智能 Agent</h4>
+          <p>多 Agent 编排、执行追踪、SSE 流式输出、会话历史。</p>
+          <div class="path">service/agent · sse/AgentSseService</div>
+        </div>
+        <div class="module">
+          <h4>📚 RAG 检索</h4>
+          <p>文档入库、分块、Embedding、向量检索、去重。</p>
+          <div class="path">service/rag · service/ingest</div>
+        </div>
+        <div class="module">
+          <h4>⚡ Skills 层</h4>
+          <p>可复用 AI 能力：摘要、标注、核验、日报、RAG 搜索、关键词扩展等。</p>
+          <div class="path">skill/ · resources/prompts/</div>
+        </div>
+        <div class="module">
+          <h4>🖥 前端 UI</h4>
+          <p>热点雷达、智能对话、设置、日报四个页面；Zustand 状态管理。</p>
+          <div class="path">frontend/src/pages · components</div>
+        </div>
+        <div class="module">
+          <h4>🐳 部署</h4>
+          <p>Docker + docker-compose；Spring Profiles dev/prod；Flyway 自动迁移。</p>
+          <div class="path">Dockerfile · docker-compose.yml</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>目录结构</h2>
+      <div class="legend">
+        <div class="legend-item"><span class="dot backend"></span> 后端 Java</div>
+        <div class="legend-item"><span class="dot frontend"></span> 前端 TS/TSX</div>
+        <div class="legend-item"><span class="dot data"></span> 数据 / SQL</div>
+        <div class="legend-item"><span class="dot infra"></span> 配置 / 部署</div>
+      </div>
+      <div class="tree-toolbar">
+        <button type="button" onclick="expandAll()">全部展开</button>
+        <button type="button" onclick="collapseAll()">全部折叠</button>
+        <button type="button" onclick="collapseToLevel(2)">折叠到第 2 层</button>
+      </div>
+      <div class="tree" id="tree"></div>
+    </section>
+  </main>
+
+  <footer>HotPulse AI · docs/project-structure.html · 用浏览器直接打开即可查看</footer>
+
+  <script>
+    const structure = {
+      name: "hotpulse-ai/",
+      type: "root",
+      desc: "项目根目录",
+      children: [
+        {
+          name: "src/main/java/com/hotpulse/",
+          type: "dir",
+          desc: "后端 Spring Boot 源码",
+          children: [
+            { name: "HotPulseApplication.java", type: "java", desc: "启动入口" },
+            {
+              name: "controller/",
+              type: "dir",
+              desc: "REST API 层",
+              children: [
+                { name: "AgentController.java", type: "java", desc: "Agent 对话 / SSE" },
+                { name: "DailyReportController.java", type: "java", desc: "日报查询 / 重跑" },
+                { name: "HotspotController.java", type: "java", desc: "热点列表 / 趋势" },
+                { name: "IngestController.java", type: "java", desc: "文档入库" },
+                { name: "MonitorKeywordController.java", type: "java", desc: "监控关键词 CRUD" },
+                { name: "SearchController.java", type: "java", desc: "RAG 搜索" },
+                { name: "SourceController.java", type: "java", desc: "信息源管理" },
+              ],
+            },
+            {
+              name: "service/",
+              type: "dir",
+              desc: "业务逻辑层",
+              children: [
+                {
+                  name: "agent/",
+                  type: "dir",
+                  children: [
+                    { name: "AgentOrchestrator.java", type: "java", desc: "Agent 编排" },
+                    { name: "PlannerAgent.java", type: "java" },
+                    { name: "CrawlerAgent.java", type: "java" },
+                    { name: "SearcherAgent.java", type: "java" },
+                    { name: "AnalyzerAgent.java", type: "java" },
+                    { name: "AggregatorAgent.java", type: "java" },
+                    { name: "AgentExecutionService.java", type: "java" },
+                    { name: "AgentExecutionTracker.java", type: "java" },
+                  ],
+                },
+                {
+                  name: "hotspot/",
+                  type: "dir",
+                  children: [
+                    { name: "HotspotService.java", type: "java", desc: "热点 CRUD / 趋势" },
+                    { name: "HotspotScoringService.java", type: "java", desc: "重要性评分" },
+                    { name: "KeywordExpansionService.java", type: "java", desc: "LLM 关键词扩展" },
+                    { name: "DailyReportService.java", type: "java", desc: "日报查询 / 触发重跑" },
+                    { name: "DailyReportGenerator.java", type: "java", desc: "@Async 异步生成" },
+                    { name: "MonitorKeywordService.java", type: "java" },
+                    { name: "SourceService.java", type: "java" },
+                    { name: "HotspotSocketService.java", type: "java", desc: "Socket.IO 推送" },
+                  ],
+                },
+                {
+                  name: "crawler/",
+                  type: "dir",
+                  children: [
+                    { name: "RssFetcher.java", type: "java" },
+                    { name: "JsoupFetcher.java", type: "java" },
+                    { name: "PlaywrightFetcher.java", type: "java" },
+                    { name: "ApiFetcher.java", type: "java", desc: "TODO: API 抓取" },
+                    { name: "PageFetcher.java", type: "java" },
+                  ],
+                },
+                {
+                  name: "ingest/",
+                  type: "dir",
+                  children: [
+                    { name: "IngestService.java", type: "java" },
+                    { name: "ChunkingService.java", type: "java" },
+                    { name: "DocumentCleaner.java", type: "java" },
+                    { name: "DuplicateDetector.java", type: "java" },
+                  ],
+                },
+                {
+                  name: "rag/",
+                  type: "dir",
+                  children: [
+                    { name: "RagService.java", type: "java" },
+                    { name: "VectorSearchService.java", type: "java" },
+                    { name: "EmbeddingService.java", type: "java" },
+                  ],
+                },
+                { name: "iwencai/IwencaiSkillService.java", type: "java" },
+              ],
+            },
+            {
+              name: "skill/",
+              type: "dir",
+              desc: "可复用 AI Skill",
+              children: [
+                { name: "Skill.java", type: "java", desc: "Skill 接口" },
+                { name: "GenerateDailyReportSkill.java", type: "java" },
+                { name: "SearchRagSkill.java", type: "java" },
+                { name: "SummarizeSkill.java", type: "java" },
+                { name: "TagDocumentSkill.java", type: "java" },
+                { name: "VerifyTruthfulnessSkill.java", type: "java" },
+                { name: "ExpandKeywordsSkill.java", type: "java" },
+                { name: "PlanSearchSkill.java", type: "java" },
+                { name: "FetchAndIngestSkill.java", type: "java" },
+              ],
+            },
+            {
+              name: "entity/",
+              type: "dir",
+              desc: "JPA 实体",
+              children: [
+                { name: "Hotspot.java", type: "java" },
+                { name: "DailyReport.java", type: "java" },
+                { name: "DailyReportStatus.java", type: "java", desc: "PENDING/GENERATING/READY/..." },
+                { name: "MonitorKeyword.java", type: "java" },
+                { name: "Source.java", type: "java" },
+                { name: "Document.java · Chunk.java · RawPage.java", type: "java" },
+                { name: "Conversation.java · Message.java", type: "java" },
+                { name: "AgentExecution.java · AgentExecutionStep.java", type: "java" },
+              ],
+            },
+            {
+              name: "repository/",
+              type: "dir",
+              desc: "Spring Data JPA",
+              children: [
+                { name: "HotspotRepository.java", type: "java" },
+                { name: "DailyReportRepository.java", type: "java" },
+                { name: "MonitorKeywordRepository.java", type: "java" },
+                { name: "SourceRepository.java", type: "java" },
+                { name: "DocumentRepository.java · ChunkRepository.java", type: "java" },
+                { name: "ConversationRepository.java · MessageRepository.java", type: "java" },
+                { name: "AgentExecutionRepository.java · AgentExecutionStepRepository.java", type: "java" },
+                { name: "RawPageRepository.java", type: "java" },
+              ],
+            },
+            {
+              name: "dto/",
+              type: "dir",
+              desc: "请求 / 响应 DTO",
+              children: [
+                { name: "AgentQueryRequest/Response.java", type: "java" },
+                { name: "DailyReportRequest/Response.java", type: "java" },
+                { name: "HotspotResponse.java · TrendPoint.java", type: "java" },
+                { name: "SearchRequest/Response.java", type: "java" },
+                { name: "MonitorKeywordRequest.java", type: "java" },
+              ],
+            },
+            {
+              name: "config/",
+              type: "dir",
+              children: [
+                { name: "SpringAIConfig.java", type: "java", desc: "LLM 配置" },
+                { name: "AsyncConfig.java", type: "java", desc: "虚拟线程池" },
+                { name: "RedisConfig.java", type: "java" },
+                { name: "RabbitMQConfig.java", type: "java" },
+                { name: "SocketIoConfig.java", type: "java" },
+                { name: "AppConfig.java", type: "java" },
+              ],
+            },
+            {
+              name: "client/",
+              type: "dir",
+              children: [
+                { name: "OpenRouterClient.java", type: "java" },
+                { name: "EmbeddingClient.java", type: "java" },
+              ],
+            },
+            {
+              name: "common/",
+              type: "dir",
+              children: [
+                { name: "Result.java", type: "java", desc: "统一响应包装" },
+                { name: "GlobalExceptionHandler.java", type: "java" },
+                { name: "TraceIdFilter.java", type: "java" },
+                { name: "AgentConstants.java", type: "java" },
+              ],
+            },
+            {
+              name: "job/",
+              type: "dir",
+              desc: "定时任务",
+              children: [
+                { name: "CrawlScheduleJob.java", type: "java", desc: "每 30 分钟抓取" },
+              ],
+            },
+            { name: "sse/AgentSseService.java", type: "java", desc: "Agent SSE 推送" },
+          ],
+        },
+        {
+          name: "src/main/resources/",
+          type: "dir",
+          desc: "后端配置与资源",
+          children: [
+            { name: "application.yml", type: "yml" },
+            { name: "application-dev.yml", type: "yml" },
+            { name: "application-prod.yml", type: "yml" },
+            {
+              name: "db/migration/",
+              type: "dir",
+              desc: "Flyway 迁移 V1–V10",
+              children: [
+                { name: "V1__init.sql", type: "sql" },
+                { name: "V4__add_monitor_keywords.sql", type: "sql" },
+                { name: "V8__fix_embedding_dimension.sql", type: "sql" },
+                { name: "V10__add_daily_report_status.sql", type: "sql" },
+                { name: "... V2–V9", type: "sql" },
+              ],
+            },
+            {
+              name: "prompts/",
+              type: "dir",
+              desc: "LLM Prompt 模板",
+              children: [
+                { name: "daily_report.st", type: "st" },
+                { name: "expand_keywords.st", type: "st" },
+                { name: "summarize.st", type: "st" },
+                { name: "tag_document.st", type: "st" },
+                { name: "verify_truthfulness.st", type: "st" },
+                { name: "plan_search.st", type: "st" },
+              ],
+            },
+          ],
+        },
+        {
+          name: "src/test/java/com/hotpulse/",
+          type: "dir",
+          desc: "单元测试",
+          children: [
+            { name: "service/hotspot/DailyReportServiceTest.java", type: "java" },
+            { name: "service/hotspot/KeywordExpansionServiceTest.java", type: "java" },
+          ],
+        },
+        {
+          name: "frontend/",
+          type: "dir",
+          desc: "React + Vite + TypeScript 前端",
+          children: [
+            { name: "package.json · vite.config.ts · tsconfig.json", type: "config" },
+            { name: "index.html", type: "config" },
+            {
+              name: "src/pages/",
+              type: "dir",
+              desc: "页面路由",
+              children: [
+                { name: "HotspotsPage.tsx", type: "tsx", desc: "热点雷达" },
+                { name: "ChatPage.tsx", type: "tsx", desc: "智能对话" },
+                { name: "SettingsPage.tsx", type: "tsx", desc: "信息源 / 关键词" },
+                { name: "DailyReportPage.tsx", type: "tsx", desc: "每日日报" },
+              ],
+            },
+            {
+              name: "src/components/",
+              type: "dir",
+              children: [
+                {
+                  name: "hotspot/",
+                  type: "dir",
+                  children: [
+                    { name: "HotspotList.tsx · HotspotCard.tsx", type: "tsx" },
+                    { name: "HotspotFilter.tsx · HotspotTrendChart.tsx", type: "tsx" },
+                    { name: "MonitorKeywordPanel.tsx", type: "tsx" },
+                  ],
+                },
+                {
+                  name: "chat/",
+                  type: "dir",
+                  children: [
+                    { name: "ChatWindow.tsx · ChatInput.tsx", type: "tsx" },
+                    { name: "MessageBubble.tsx", type: "tsx" },
+                    { name: "AgentProgressPanel.tsx", type: "tsx" },
+                    { name: "ConversationHistoryPanel.tsx", type: "tsx" },
+                  ],
+                },
+                {
+                  name: "common/",
+                  type: "dir",
+                  children: [
+                    { name: "Layout.tsx · LoadingSpinner.tsx", type: "tsx" },
+                    { name: "ScoreBadge.tsx · SourceTag.tsx", type: "tsx" },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "src/hooks/",
+              type: "dir",
+              children: [
+                { name: "useHotspots.ts · useMonitorKeywords.ts", type: "ts" },
+                { name: "useChat.ts · useAgentExecution.ts", type: "ts" },
+                { name: "useReport.ts · useSources.ts · useSocket.ts", type: "ts" },
+              ],
+            },
+            {
+              name: "src/services/",
+              type: "dir",
+              children: [
+                { name: "api.ts", type: "ts", desc: "REST API 封装" },
+                { name: "agentSse.ts", type: "ts", desc: "SSE 客户端" },
+                { name: "socket.ts", type: "ts", desc: "Socket.IO" },
+              ],
+            },
+            {
+              name: "src/store/",
+              type: "dir",
+              children: [
+                { name: "hotspotStore.ts · chatStore.ts", type: "ts" },
+                { name: "agentExecutionStore.ts", type: "ts" },
+              ],
+            },
+            {
+              name: "src/types/",
+              type: "dir",
+              children: [
+                { name: "hotspot.ts · monitorKeyword.ts", type: "ts" },
+                { name: "chat.ts · agent.ts", type: "ts" },
+              ],
+            },
+            { name: "App.tsx · main.tsx · index.css", type: "tsx" },
+          ],
+        },
+        {
+          name: "docs/",
+          type: "dir",
+          children: [
+            { name: "screenshots/", type: "dir", desc: "README 截图" },
+            { name: "project-structure.html", type: "config", desc: "本文件" },
+          ],
+        },
+        {
+          name: "根目录配置",
+          type: "dir",
+          children: [
+            { name: "pom.xml", type: "config", desc: "Maven 构建" },
+            { name: "Dockerfile · docker-compose.yml", type: "config" },
+            { name: ".env.example", type: "config" },
+            { name: "README.md", type: "md" },
+          ],
+        },
+      ],
+    };
+
+    function fileClass(node) {
+      if (node.type === "root") return "root";
+      if (node.type === "dir") return "dir-name";
+      const map = {
+        java: "file-java",
+        ts: "file-ts",
+        tsx: "file-tsx",
+        yml: "file-yml",
+        sql: "file-sql",
+        st: "file-st",
+        md: "file-md",
+        config: "file-config",
+      };
+      return map[node.type] || "file-config";
+    }
+
+    function icon(node) {
+      if (node.type === "root") return "📦";
+      if (node.type === "dir") return "📁";
+      const ext = node.name.split(".").pop();
+      const icons = { java: "☕", ts: "🔷", tsx: "⚛", sql: "🗄", yml: "⚙", st: "📝", md: "📄" };
+      return icons[ext] || icons[node.type] || "📄";
+    }
+
+    function renderNode(node, depth = 0) {
+      const hasChildren = node.children && node.children.length > 0;
+      const li = document.createElement("li");
+
+      const span = document.createElement("span");
+      span.className = "node" + (hasChildren ? " dir" : "");
+      span.innerHTML =
+        `<span class="icon">${icon(node)}</span>` +
+        `<span class="name ${fileClass(node)}">${node.name}</span>` +
+        (node.desc ? `<span class="desc">— ${node.desc}</span>` : "");
+
+      li.appendChild(span);
+
+      if (hasChildren) {
+        const ul = document.createElement("ul");
+        node.children.forEach((child) => ul.appendChild(renderNode(child, depth + 1)));
+        li.appendChild(ul);
+
+        span.addEventListener("click", () => {
+          span.classList.toggle("collapsed");
+        });
+      }
+
+      return li;
+    }
+
+    const treeEl = document.getElementById("tree");
+    const rootUl = document.createElement("ul");
+    rootUl.appendChild(renderNode(structure));
+    treeEl.appendChild(rootUl);
+
+    function getAllDirNodes() {
+      return treeEl.querySelectorAll(".node.dir");
+    }
+
+    function expandAll() {
+      getAllDirNodes().forEach((n) => n.classList.remove("collapsed"));
+    }
+
+    function collapseAll() {
+      getAllDirNodes().forEach((n) => n.classList.add("collapsed"));
+    }
+
+    function collapseToLevel(maxDepth) {
+      function walk(ul, depth) {
+        ul.querySelectorAll(":scope > li").forEach((li) => {
+          const node = li.querySelector(":scope > .node.dir");
+          const childUl = li.querySelector(":scope > ul");
+          if (node && childUl) {
+            if (depth >= maxDepth) node.classList.add("collapsed");
+            else node.classList.remove("collapsed");
+            walk(childUl, depth + 1);
+          }
+        });
+      }
+      walk(treeEl.querySelector("ul"), 0);
+    }
+
+    collapseToLevel(2);
+  </script>
+</body>
+</html>

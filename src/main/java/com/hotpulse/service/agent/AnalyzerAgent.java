@@ -10,8 +10,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -21,7 +24,10 @@ import java.util.stream.IntStream;
 public class AnalyzerAgent {
 
     private static final double TRUTH_THRESHOLD     = 0.4;
-    private static final double RELEVANCE_THRESHOLD = 0.25;
+    private static final double RELEVANCE_THRESHOLD = 0.45;
+    private static final double DIRECT_QUERY_MATCH_SCORE = 0.9;
+    private static final double NO_MATCH_SCORE = 0.05;
+    private static final int MAX_TEXT_CHARS_FOR_RELEVANCE = 2000;
     /** 批量发送给 LLM 的最大文档数，避免单次 prompt 过长 */
     private static final int BATCH_SIZE = 8;
 
@@ -52,7 +58,7 @@ public class AnalyzerAgent {
         List<SearchResponse.Evidence> evidences = fetchSharedEvidences(originalQuery);
 
         // Step 2: 用关键词命中计算每篇文档相关性，避免依赖 embedding API
-        List<Double> relevanceScores = documents.stream()
+        List<RelevanceResult> relevanceResults = documents.stream()
                 .map(doc -> computeKeywordRelevance(doc, originalQuery))
                 .collect(Collectors.toList());
 
@@ -69,7 +75,8 @@ public class AnalyzerAgent {
         for (int i = 0; i < documents.size(); i++) {
             Document doc = documents.get(i);
             double truth = truthScores.get(i);
-            double relevance = relevanceScores.get(i);
+            RelevanceResult relevanceResult = relevanceResults.get(i);
+            double relevance = relevanceResult.score();
             double importance = computeImportanceScore(doc, evidences, relevance);
             boolean truthPassed = truth >= TRUTH_THRESHOLD;
             boolean relevancePassed = relevance >= RELEVANCE_THRESHOLD;
@@ -85,7 +92,7 @@ public class AnalyzerAgent {
                     reason = "真实性不足";
                 } else {
                     lowRelevance++;
-                    reason = "相关性不足";
+                    reason = "相关性不足：" + relevanceResult.reason();
                 }
             }
 
@@ -95,7 +102,8 @@ public class AnalyzerAgent {
                 continue;
             }
             results.add(Map.entry(doc, new AnalysisResult(truth, relevance, importance,
-                    "批量评估 score=" + String.format("%.2f", truth))));
+                    "批量评估 score=" + String.format("%.2f", truth)
+                            + "；相关性：" + relevanceResult.reason())));
             passed++;
         }
 
@@ -155,7 +163,10 @@ public class AnalyzerAgent {
                 IntStream.range(0, chunk.size()).forEach(i -> results.add(0.5));
             }
         }
-        return results;
+        while (results.size() < docs.size()) {
+            results.add(0.5);
+        }
+        return results.size() > docs.size() ? results.subList(0, docs.size()) : results;
     }
 
     private double computeImportanceScore(Document doc,
@@ -174,18 +185,54 @@ public class AnalyzerAgent {
     }
 
     /** 关键词覆盖率，用于判断监控关键词与候选文档的相关性。*/
-    private double computeKeywordRelevance(Document doc, String query) {
-        if (query.isBlank()) return 0.5;
+    RelevanceResult computeKeywordRelevance(Document doc, String query) {
+        List<String> terms = extractTerms(query);
+        if (terms.isEmpty()) {
+            return new RelevanceResult(0.5, "无有效关键词，使用中性分");
+        }
+
         String docText = (
                 (doc.getTitle() != null ? doc.getTitle() : "")
                 + " " + (doc.getSummary() != null ? doc.getSummary() : "")
-                + " " + (doc.getContent() != null ? doc.getContent().substring(0, Math.min(doc.getContent().length(), 500)) : "")
+                + " " + truncate(doc.getContent(), MAX_TEXT_CHARS_FOR_RELEVANCE)
         ).toLowerCase();
-        String[] terms = query.toLowerCase().split("[\\s,，。！？、；:：]+");
-        long meaningful = java.util.Arrays.stream(terms).filter(t -> t.length() >= 2).count();
-        if (meaningful == 0) return 0.5;
-        long matches = java.util.Arrays.stream(terms).filter(t -> t.length() >= 2 && docText.contains(t)).count();
-        return Math.min(1.0, 0.3 + (double) matches / meaningful * 0.7);
+
+        List<String> matchedTerms = terms.stream()
+                .filter(docText::contains)
+                .toList();
+        if (matchedTerms.isEmpty()) {
+            return new RelevanceResult(NO_MATCH_SCORE, "未命中任何关键词");
+        }
+
+        String primaryTerm = terms.get(0);
+        boolean primaryMatched = docText.contains(primaryTerm);
+        double coverage = (double) matchedTerms.size() / terms.size();
+        double score = primaryMatched
+                ? DIRECT_QUERY_MATCH_SCORE + Math.min(0.1, coverage * 0.1)
+                : Math.min(0.8, 0.2 + coverage * 0.6);
+
+        return new RelevanceResult(
+                Math.min(1.0, score),
+                "命中 " + matchedTerms.size() + "/" + terms.size()
+                        + " 个关键词：" + String.join("、", matchedTerms.stream().limit(5).toList()));
+    }
+
+    private List<String> extractTerms(String query) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+        Set<String> terms = Arrays.stream(query.toLowerCase().split("[\\s,，。！？、；:：]+"))
+                .map(String::trim)
+                .filter(term -> term.length() >= 2)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return List.copyOf(terms);
+    }
+
+    private String truncate(String text, int maxChars) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        return text.length() <= maxChars ? text : text.substring(0, maxChars);
     }
 
     private String buildAnalysisSummary(int total,
@@ -245,6 +292,8 @@ public class AnalyzerAgent {
             double importanceScore,
             String evidence
     ) {}
+
+    record RelevanceResult(double score, String reason) {}
 
     private record DocumentAnalysisTrace(
             Document doc,

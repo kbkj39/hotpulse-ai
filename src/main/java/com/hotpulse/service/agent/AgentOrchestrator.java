@@ -526,9 +526,8 @@ public class AgentOrchestrator {
 
             List<CandidateItem> candidates = parallelSearch(executionId, sources, expandedKeywords);
             List<Document> documents = parallelCrawl(executionId, candidates, sources);
-            String query = String.join(" ", expandedKeywords);
             List<Map.Entry<Document, AnalyzerAgent.AnalysisResult>> analysisResults =
-                    analyze(executionId, documents, query);
+                    analyze(executionId, documents, keywordText);
             List<Hotspot> hotspots = aggregatorAgent.aggregate(executionId, analysisResults);
 
             executionService.markDone(executionId);

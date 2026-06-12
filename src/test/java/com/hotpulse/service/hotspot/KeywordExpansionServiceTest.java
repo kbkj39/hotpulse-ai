@@ -57,7 +57,7 @@ class KeywordExpansionServiceTest {
         List<String> expanded = service.expand(List.of("GPT，openai gpt"));
 
         assertThat(expanded)
-                .containsExactly("GPT", "chatgpt", "openai", "大模型", "生成式ai", "人工智能");
+                .containsExactly("GPT", "openai", "chatgpt", "大模型", "生成式ai", "人工智能");
     }
 
     @Test

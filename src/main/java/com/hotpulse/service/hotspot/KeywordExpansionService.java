@@ -50,7 +50,10 @@ public class KeywordExpansionService {
                     new ExpandKeywordsSkill.Input(normalized, MAX_KEYWORDS));
             if (result.isOk() && result.data() != null && !result.data().isEmpty()) {
                 log.debug("LLM expanded keywords: {} -> {}", normalized, result.data());
-                return result.data().stream()
+                LinkedHashMap<String, String> merged = new LinkedHashMap<>();
+                normalized.forEach(keyword -> add(merged, keyword));
+                result.data().forEach(keyword -> add(merged, keyword));
+                return merged.values().stream()
                         .limit(MAX_KEYWORDS)
                         .toList();
             }

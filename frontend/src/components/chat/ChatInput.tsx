@@ -1,4 +1,4 @@
-﻿import { useState, type ReactNode } from 'react'
+﻿import { useState, useRef, type ReactNode, type KeyboardEvent } from 'react'
 
 interface ChatInputProps {
   onSend: (text: string) => void
@@ -19,7 +19,7 @@ export function ChatInput({ onSend, disabled, placeholder, pinnedHotspotBar }: C
     textareaRef.current?.focus()
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()

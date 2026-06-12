@@ -1,5 +1,6 @@
 package com.hotpulse.common;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -27,15 +28,21 @@ public class GlobalExceptionHandler {
         return Result.error(400, ex.getMessage());
     }
 
-    @ExceptionHandler(jakarta.persistence.EntityNotFoundException.class)
+    @ExceptionHandler(EntityNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Result<Void> handleNotFound(jakarta.persistence.EntityNotFoundException ex) {
+    public Result<Void> handleNotFound(EntityNotFoundException ex) {
         return Result.error(404, ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Result<Void> handleIllegalState(IllegalStateException ex) {
+        return Result.error(409, ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> handleGeneral(Exception ex) {
-        return Result.error(500, "服务器内部错误");
+        return Result.error(500, "Internal server error");
     }
 }

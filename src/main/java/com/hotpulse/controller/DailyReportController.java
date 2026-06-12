@@ -25,4 +25,10 @@ public class DailyReportController {
     public Result<DailyReportResponse> getLatestDailyReport() {
         return Result.ok(dailyReportService.getLatest());
     }
+
+    @PostMapping("/daily/regenerate")
+    public Result<DailyReportResponse> regenerateDailyReport(@RequestParam String date) {
+        LocalDate localDate = LocalDate.parse(date);
+        return Result.ok(dailyReportService.triggerRegenerate(localDate));
+    }
 }

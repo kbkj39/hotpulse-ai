@@ -1,9 +1,9 @@
-package com.hotpulse.job;
+package com.hotpulse.service.hotspot;
 
+import com.hotpulse.dto.DailyReportRequest;
 import com.hotpulse.entity.DailyReport;
 import com.hotpulse.entity.DailyReportStatus;
 import com.hotpulse.entity.Hotspot;
-import com.hotpulse.dto.DailyReportRequest;
 import com.hotpulse.repository.DailyReportRepository;
 import com.hotpulse.repository.HotspotRepository;
 import com.hotpulse.skill.GenerateDailyReportSkill;
@@ -11,7 +11,7 @@ import com.hotpulse.skill.SkillResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -24,25 +24,28 @@ import java.util.Set;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class DailyReportJob {
+public class DailyReportGenerator {
 
     private final HotspotRepository hotspotRepository;
     private final DailyReportRepository dailyReportRepository;
     private final GenerateDailyReportSkill generateDailyReportSkill;
 
-    // 终态或进行中：直接跳过本次 cron。
-    //   READY/EMPTY - 已有结论，无需重跑
-    //   GENERATING  - 另一实例正在跑（避免并发）或上次崩溃遗留，避免重入
     private static final Set<DailyReportStatus> SKIP_STATUSES = EnumSet.of(
             DailyReportStatus.READY,
             DailyReportStatus.EMPTY,
             DailyReportStatus.GENERATING);
 
-    @Scheduled(cron = "0 30 0 * * *") // 每天 00:30 触发
-    public void generateDailyReport() {
-        // 00:30 触发时把"昨天"作为报告日。例如 2026-06-12 00:30 跑，生成 2026-06-11 的日报，
-        // 避免把当天尚未积累的热点混进报告里。
-        LocalDate reportDate = LocalDate.now().minusDays(1);
+    @Async
+    public void generateAsync(LocalDate reportDate) {
+        try {
+            doGenerate(reportDate);
+        } catch (Exception e) {
+            log.error("DailyReportGenerator crashed for {}", reportDate, e);
+            markFailed(reportDate, e);
+        }
+    }
+
+    private void doGenerate(LocalDate reportDate) {
         ZoneId zone = ZoneId.systemDefault();
         Instant startOfDay = reportDate.atStartOfDay(zone).toInstant();
         Instant endOfDay = reportDate.plusDays(1).atStartOfDay(zone).toInstant();
@@ -52,6 +55,7 @@ public class DailyReportJob {
                     DailyReport r = new DailyReport();
                     r.setReportDate(reportDate);
                     r.setStatus(DailyReportStatus.PENDING);
+                    r.setContent("");
                     return dailyReportRepository.save(r);
                 });
 
@@ -60,7 +64,6 @@ public class DailyReportJob {
             return;
         }
 
-        // 进入生成态
         report.setStatus(DailyReportStatus.GENERATING);
         report.setErrorMessage(null);
         dailyReportRepository.save(report);
@@ -82,15 +85,42 @@ public class DailyReportJob {
             report.setStatus(DailyReportStatus.FAILED);
             report.setErrorMessage(result.error());
             dailyReportRepository.save(report);
-            log.error("DailyReportJob failed: {}", result.error());
+            log.error("DailyReport generation failed: {}", result.error());
             return;
         }
 
-        report.setContent(result.data());
+        String content = result.data();
+        if (content == null || content.isBlank()) {
+            report.setStatus(DailyReportStatus.FAILED);
+            report.setErrorMessage("Daily report content is empty");
+            dailyReportRepository.save(report);
+            log.error("DailyReport generation returned empty content for {}", reportDate);
+            return;
+        }
+
+        report.setContent(content);
         report.setHotspotCount(hotspots.size());
         report.setGeneratedAt(Instant.now());
         report.setStatus(DailyReportStatus.READY);
         dailyReportRepository.save(report);
         log.info("DailyReport generated for {} with {} hotspots", reportDate, hotspots.size());
+    }
+
+    private void markFailed(LocalDate reportDate, Exception e) {
+        try {
+            dailyReportRepository.findByReportDate(reportDate)
+                    .filter(report -> report.getStatus() == DailyReportStatus.PENDING
+                            || report.getStatus() == DailyReportStatus.GENERATING)
+                    .ifPresent(report -> {
+                        report.setStatus(DailyReportStatus.FAILED);
+                        report.setErrorMessage(e.getMessage());
+                        if (report.getContent() == null) {
+                            report.setContent("");
+                        }
+                        dailyReportRepository.save(report);
+                    });
+        } catch (Exception saveError) {
+            log.error("Failed to mark DailyReport as FAILED for {}", reportDate, saveError);
+        }
     }
 }

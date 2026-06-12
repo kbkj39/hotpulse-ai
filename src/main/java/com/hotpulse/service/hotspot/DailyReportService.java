@@ -4,6 +4,7 @@ import com.hotpulse.dto.DailyReportResponse;
 import com.hotpulse.entity.DailyReport;
 import com.hotpulse.entity.DailyReportStatus;
 import com.hotpulse.repository.DailyReportRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,16 +15,44 @@ import java.time.LocalDate;
 public class DailyReportService {
 
     private final DailyReportRepository dailyReportRepository;
+    private final DailyReportGenerator dailyReportGenerator;
 
     public DailyReportResponse getByDate(LocalDate date) {
         DailyReport report = dailyReportRepository.findByReportDate(date)
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("日报不存在: " + date));
+                .orElseThrow(() -> new EntityNotFoundException("Daily report not found: " + date));
         return toResponse(report);
     }
 
     public DailyReportResponse getLatest() {
         DailyReport report = dailyReportRepository.findTopByOrderByReportDateDesc()
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("暂无日报"));
+                .orElseThrow(() -> new EntityNotFoundException("No daily report found"));
+        return toResponse(report);
+    }
+
+    public DailyReportResponse triggerRegenerate(LocalDate date) {
+        DailyReport report = dailyReportRepository.findByReportDate(date)
+                .orElseGet(() -> {
+                    DailyReport r = new DailyReport();
+                    r.setReportDate(date);
+                    r.setStatus(DailyReportStatus.PENDING);
+                    r.setContent("");
+                    return dailyReportRepository.save(r);
+                });
+
+        if (report.getStatus() == DailyReportStatus.GENERATING) {
+            throw new IllegalStateException("Daily report is already generating: " + date);
+        }
+
+        // daily_reports.content is NOT NULL, so PENDING uses an empty content placeholder.
+        report.setStatus(DailyReportStatus.PENDING);
+        report.setErrorMessage(null);
+        report.setContent("");
+        report.setHotspotCount(null);
+        report.setGeneratedAt(null);
+        dailyReportRepository.save(report);
+
+        dailyReportGenerator.generateAsync(date);
+
         return toResponse(report);
     }
 

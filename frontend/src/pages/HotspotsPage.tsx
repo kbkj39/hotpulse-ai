@@ -30,156 +30,200 @@ export function HotspotsPage() {
       <div
         style={{
           display: 'flex',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          gap: '20px',
-          marginBottom: '22px',
-          paddingBottom: '16px',
-          borderBottom: '2px solid #1F1F1F',
+          alignItems: 'flex-start',
+          gap: '22px',
           flexWrap: 'wrap',
         }}
       >
-        <div>
-          <h1
+        <aside style={{ flex: '0 0 390px', maxWidth: '100%' }}>
+          <MonitorKeywordPanel
+            keywords={keywords}
+            activeKeyword={filter.keyword}
+            loading={keywordsLoading}
+            error={keywordsError}
+            onApply={(keyword) => setFilter({ keyword, page: 1 })}
+            onCreate={createKeyword}
+            onToggle={toggleKeyword}
+            onDelete={deleteKeyword}
+            onTrigger={triggerKeyword}
+            onTriggerAll={triggerAllKeywords}
+            onUpdateInterval={updateInterval}
+            onCrawlDone={refetch}
+          />
+          <section
             style={{
-              fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-              fontWeight: 600,
-              fontSize: '22px',
-              letterSpacing: '0',
-              color: '#fff',
-              margin: 0,
+              marginTop: '16px',
+              padding: '16px',
+              border: '1px solid #202020',
+              borderRadius: '8px',
+              background: '#050505',
             }}
           >
-            热点雷达
-          </h1>
-          <div
-            style={{
-              marginTop: '6px',
-              fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
-              fontSize: '13px',
-              color: '#777',
-            }}
-          >
-            监控关键词、跟踪主题热度，并筛出值得继续追踪的新闻线索。
-          </div>
-        </div>
-        <span
-          style={{
-            fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-            fontSize: '12px',
-            color: '#888',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-          }}
-        >
-          {total} 条热点
-        </span>
-      </div>
-      <MonitorKeywordPanel
-        keywords={keywords}
-        activeKeyword={filter.keyword}
-        loading={keywordsLoading}
-        error={keywordsError}
-        onApply={(keyword) => setFilter({ keyword, page: 1 })}
-        onCreate={createKeyword}
-        onToggle={toggleKeyword}
-        onDelete={deleteKeyword}
-        onTrigger={triggerKeyword}
-        onTriggerAll={triggerAllKeywords}
-        onUpdateInterval={updateInterval}
-        onCrawlDone={refetch}
-      />
-      <section
-        style={{
-          marginTop: '28px',
-          marginBottom: '28px',
-          padding: '18px 20px 22px',
-          border: '1px solid #202020',
-          borderRadius: '8px',
-          background: '#050505',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: '16px',
-            marginBottom: '10px',
-            flexWrap: 'wrap',
-          }}
-        >
-          <div>
-            <h2
-              style={{
-                fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-                fontWeight: 600,
-                fontSize: '17px',
-                letterSpacing: '0',
-                color: '#fff',
-                margin: 0,
-              }}
-            >
-              趋势观察
-            </h2>
             <div
               style={{
-                marginTop: '6px',
-                fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
-                fontSize: '13px',
-                color: '#777',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: '12px',
+                marginBottom: '10px',
+                flexWrap: 'wrap',
               }}
             >
-              {trendScopeText}
-            </div>
-          </div>
-          <div
-            role="tablist"
-            aria-label="趋势时间粒度"
-            style={{
-              display: 'inline-flex',
-              border: '1px solid #242424',
-              borderRadius: '6px',
-              overflow: 'hidden',
-              flexShrink: 0,
-            }}
-          >
-            {[
-              ['hour', '按小时'],
-              ['day', '按天'],
-            ].map(([value, label]) => {
-              const active = trendInterval === value
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setTrendInterval(value as 'hour' | 'day')}
+              <div>
+                <h2
                   style={{
-                    padding: '6px 14px',
-                    background: active ? '#E6E6E6' : 'transparent',
-                    color: active ? '#050505' : '#888',
-                    border: 'none',
-                    borderRight: value === 'hour' ? '1px solid #242424' : 'none',
-                    cursor: 'pointer',
-                    fontSize: '12px',
                     fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+                    fontWeight: 600,
+                    fontSize: '15px',
+                    letterSpacing: '0',
+                    color: '#fff',
+                    margin: 0,
                   }}
                 >
-                  {label}
-                </button>
-              )
-            })}
+                  趋势观察
+                </h2>
+                <div
+                  style={{
+                    marginTop: '6px',
+                    fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
+                    fontSize: '12px',
+                    color: '#777',
+                  }}
+                >
+                  {trendScopeText}
+                </div>
+              </div>
+              <div
+                role="tablist"
+                aria-label="趋势时间粒度"
+                style={{
+                  display: 'inline-flex',
+                  border: '1px solid #242424',
+                  borderRadius: '6px',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                }}
+              >
+                {[
+                  ['hour', '小时'],
+                  ['day', '天'],
+                ].map(([value, label]) => {
+                  const active = trendInterval === value
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setTrendInterval(value as 'hour' | 'day')}
+                      style={{
+                        padding: '5px 10px',
+                        background: active ? '#E6E6E6' : 'transparent',
+                        color: active ? '#050505' : '#888',
+                        border: 'none',
+                        borderRight: value === 'hour' ? '1px solid #242424' : 'none',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <HotspotTrendChart
+              interval={trendInterval}
+              monitorKeyword={activeMonitorKeyword}
+              tag={filter.tag}
+              keyword={freeTextKeyword}
+              compact
+            />
+          </section>
+        </aside>
+
+        <section
+          style={{
+            display: 'flex',
+            flex: '1 1 560px',
+            minWidth: 0,
+            flexDirection: 'column',
+          }}
+        >
+          <div
+            style={{
+              marginBottom: '14px',
+              padding: '14px 16px',
+              border: '1px solid #202020',
+              borderRadius: '8px',
+              background: '#050505',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                gap: '16px',
+                marginBottom: '12px',
+                paddingBottom: '12px',
+                borderBottom: '1px solid #151515',
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: '10px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <h2
+                    style={{
+                      fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      color: '#fff',
+                      margin: 0,
+                    }}
+                  >
+                    热点列表
+                  </h2>
+                  <span
+                    style={{
+                      fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
+                      fontSize: '12px',
+                      color: '#666',
+                    }}
+                  >
+                    {trendScopeText}
+                  </span>
+                </div>
+              </div>
+              <span
+                style={{
+                  fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+                  fontSize: '12px',
+                  color: '#888',
+                }}
+              >
+                {total} 条
+              </span>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <HotspotFilterBar filter={filter} onChange={setFilter} compact />
+            </div>
           </div>
-        </div>
-        <HotspotTrendChart
-          interval={trendInterval}
-          monitorKeyword={activeMonitorKeyword}
-          tag={filter.tag}
-          keyword={freeTextKeyword}
-        />
-      </section>
-      <HotspotFilterBar filter={filter} onChange={setFilter} />
-      {loading ? <LoadingSpinner /> : <HotspotList hotspots={hotspots} />}
+          {loading ? <LoadingSpinner /> : <HotspotList hotspots={hotspots} />}
+        </section>
+      </div>
     </div>
   )
 }

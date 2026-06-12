@@ -3,6 +3,7 @@ import type { HotspotFilter } from '@/types/hotspot'
 interface HotspotFilterProps {
   filter: HotspotFilter
   onChange: (filter: Partial<HotspotFilter>) => void
+  compact?: boolean
 }
 
 const SORT_OPTIONS: { value: HotspotFilter['sort']; label: string }[] = [
@@ -12,7 +13,7 @@ const SORT_OPTIONS: { value: HotspotFilter['sort']; label: string }[] = [
   { value: 'time', label: '最新' },
 ]
 
-export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
+export function HotspotFilterBar({ filter, onChange, compact }: HotspotFilterProps) {
   return (
     <div
       style={{
@@ -20,10 +21,10 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
         alignItems: 'center',
         gap: '8px',
         flexWrap: 'wrap',
-        marginBottom: '8px',
-        padding: '10px 0 12px',
-        borderBottom: '1px solid #1F1F1F',
-        borderTop: '1px solid #151515',
+        marginBottom: compact ? 0 : '8px',
+        padding: compact ? 0 : '10px 0 12px',
+        borderBottom: compact ? 'none' : '1px solid #1F1F1F',
+        borderTop: compact ? 'none' : '1px solid #151515',
       }}
     >
       <span
@@ -46,7 +47,7 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
             type="button"
             onClick={() => onChange({ sort: opt.value, page: 1 })}
             style={{
-              padding: '3px 10px',
+              padding: compact ? '5px 12px' : '3px 10px',
               border: `1px solid ${isActive ? '#E6E6E6' : '#1F1F1F'}`,
               background: isActive ? '#E6E6E6' : 'transparent',
               color: isActive ? '#050505' : '#777',
@@ -70,7 +71,7 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
         onChange={(e) => onChange({ tag: e.target.value || undefined, page: 1 })}
         style={{
           marginLeft: '8px',
-          padding: '3px 10px',
+          padding: compact ? '5px 10px' : '3px 10px',
           border: '1px solid #1F1F1F',
           background: 'transparent',
           color: '#888',
@@ -78,7 +79,7 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
           fontSize: '12px',
           letterSpacing: '0',
           outline: 'none',
-          width: '120px',
+          width: compact ? '140px' : '120px',
           borderRadius: '5px',
           transition: 'border-color 150ms ease',
         }}
@@ -92,7 +93,7 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
         value={filter.keyword ?? ''}
         onChange={(e) => onChange({ keyword: e.target.value || undefined, page: 1 })}
         style={{
-          padding: '3px 10px',
+          padding: compact ? '5px 10px' : '3px 10px',
           border: '1px solid #1F1F1F',
           background: 'transparent',
           color: '#888',
@@ -100,7 +101,7 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
           fontSize: '12px',
           letterSpacing: '0',
           outline: 'none',
-          width: '150px',
+          width: compact ? '180px' : '150px',
           borderRadius: '5px',
           transition: 'border-color 150ms ease',
         }}

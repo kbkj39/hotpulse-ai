@@ -23,6 +23,7 @@ interface HotspotTrendChartProps {
   monitorKeyword?: string
   tag?: string
   keyword?: string
+  compact?: boolean
 }
 
 export function HotspotTrendChart({
@@ -30,6 +31,7 @@ export function HotspotTrendChart({
   monitorKeyword,
   tag,
   keyword,
+  compact,
 }: HotspotTrendChartProps) {
   const [data, setData] = useState<TrendPoint[]>([])
   const [loading, setLoading] = useState(true)
@@ -106,12 +108,12 @@ export function HotspotTrendChart({
   }))
 
   return (
-    <div style={{ width: '100%', height: '320px', marginTop: '20px' }}>
+    <div style={{ width: '100%', height: compact ? '240px' : '320px', marginTop: compact ? '12px' : '20px' }}>
       <div
         style={{
           marginBottom: '8px',
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: compact ? 'flex-start' : 'space-between',
           gap: '12px',
           flexWrap: 'wrap',
           fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
@@ -121,12 +123,12 @@ export function HotspotTrendChart({
         }}
       >
         <span>{scopeLabel}</span>
-        <span>分数线为每个时间桶 Top 5 热点均值</span>
+        {!compact && <span>分数线为每个时间桶 Top 5 热点均值</span>}
       </div>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={formattedData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          margin={compact ? { top: 5, right: 18, left: 0, bottom: 5 } : { top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#202020" />
           <XAxis
@@ -138,14 +140,14 @@ export function HotspotTrendChart({
             yAxisId="left"
             stroke="#888"
             style={{ fontSize: '12px' }}
-            label={{ value: '分数', angle: -90, position: 'insideLeft', fill: '#777' }}
+            label={compact ? undefined : { value: '分数', angle: -90, position: 'insideLeft', fill: '#777' }}
           />
           <YAxis
             yAxisId="right"
             orientation="right"
             stroke="#888"
             style={{ fontSize: '12px' }}
-            label={{ value: '数量', angle: 90, position: 'insideRight', fill: '#777' }}
+            label={compact ? undefined : { value: '数量', angle: 90, position: 'insideRight', fill: '#777' }}
           />
           <Tooltip
             contentStyle={{
@@ -155,7 +157,7 @@ export function HotspotTrendChart({
               color: '#fff',
             }}
           />
-          <Legend />
+          {!compact && <Legend />}
           <Line
             yAxisId="left"
             type="monotone"

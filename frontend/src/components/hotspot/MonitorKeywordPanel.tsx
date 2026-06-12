@@ -8,7 +8,7 @@ interface MonitorKeywordPanelProps {
   activeKeyword?: string
   loading?: boolean
   error?: string | null
-  onApply: (keyword?: string) => void
+  onApply: (keyword?: string, executionId?: string | null) => void
   onCreate: (keyword: string, triggerNow: boolean, crawlIntervalHours?: number | null) => Promise<{ keywordId: number; executionId: string | null }>
   onToggle: (item: MonitorKeyword) => Promise<void>
   onDelete: (id: number) => Promise<void>
@@ -36,7 +36,7 @@ interface KeywordCardProps {
   item: MonitorKeyword
   selected: boolean
   externalExecutionId: string | null
-  onApply: (kw?: string) => void
+  onApply: (kw?: string, executionId?: string | null) => void
   onToggle: (item: MonitorKeyword) => Promise<void>
   onDelete: (id: number) => Promise<void>
   onTrigger: (id: number) => Promise<string | null>
@@ -100,6 +100,7 @@ function KeywordCard({
       if (id) {
         setExecutionId(id)
         setExpanded(true)
+        onApply(item.keyword, id)
       }
     } catch (_) {
       /* error surfaced by parent hook */
@@ -380,7 +381,7 @@ export function MonitorKeywordPanel({
     try {
       const { keywordId, executionId } = await onCreate(normalized, true, null)
       setValue('')
-      onApply(normalized)
+      onApply(normalized, executionId)
       if (executionId) {
         setKeywordExecIdMap((prev) => ({ ...prev, [keywordId]: executionId }))
       }
@@ -423,8 +424,12 @@ export function MonitorKeywordPanel({
   return (
     <section
       style={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: '1 1 auto',
+        minHeight: 0,
         padding: '16px 18px',
-        marginBottom: '22px',
+        marginBottom: 0,
         border: '1px solid #1F1F1F',
         borderRadius: '8px',
         background: '#030303',
@@ -608,28 +613,30 @@ export function MonitorKeywordPanel({
       )}
 
       {/* 关键词卡片列表 */}
-      {loading && (
-        <div style={{ fontFamily: MONO, fontSize: '12px', color: '#444' }}>加载中…</div>
-      )}
-      {!loading && keywords.length === 0 && (
-        <div style={{ fontFamily: MONO, fontSize: '12px', color: '#333' }}>
-          暂无监控关键词，请在上方添加
-        </div>
-      )}
-      {keywords.map((item) => (
-        <KeywordCard
-          key={item.id}
-          item={item}
-          selected={activeKeyword === item.keyword}
-          externalExecutionId={keywordExecIdMap[item.id] ?? null}
-          onApply={onApply}
-          onToggle={onToggle}
-          onDelete={onDelete}
-          onTrigger={onTrigger}
-          onUpdateInterval={onUpdateInterval}
-          onCrawlDone={onCrawlDone}
-        />
-      ))}
+      <div style={{ flex: '1 1 auto', minHeight: '96px', overflowY: 'auto', paddingRight: '2px' }}>
+        {loading && (
+          <div style={{ fontFamily: MONO, fontSize: '12px', color: '#444' }}>加载中…</div>
+        )}
+        {!loading && keywords.length === 0 && (
+          <div style={{ fontFamily: MONO, fontSize: '12px', color: '#333' }}>
+            暂无监控关键词，请在上方添加
+          </div>
+        )}
+        {keywords.map((item) => (
+          <KeywordCard
+            key={item.id}
+            item={item}
+            selected={activeKeyword === item.keyword}
+            externalExecutionId={keywordExecIdMap[item.id] ?? null}
+            onApply={onApply}
+            onToggle={onToggle}
+            onDelete={onDelete}
+            onTrigger={onTrigger}
+            onUpdateInterval={onUpdateInterval}
+            onCrawlDone={onCrawlDone}
+          />
+        ))}
+      </div>
     </section>
   )
 }

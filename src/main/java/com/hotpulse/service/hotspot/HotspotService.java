@@ -42,14 +42,17 @@ public class HotspotService {
     private static final String CACHE_PREFIX = "hotspots:";
     private static final Duration CACHE_TTL = Duration.ofMinutes(5);
 
-    public Map<String, Object> getHotspots(String sort, int page, int limit, String tag, String keyword) {
-        String cacheKey = CACHE_PREFIX + sort + ":" + page + ":" + limit + ":" + tag;
+    public Map<String, Object> getHotspots(String sort, int page, int limit, String monitorKeyword, Long executionId, String tag, String keyword) {
+        String normalizedMonitorKeyword = normalize(monitorKeyword);
+        String normalizedTag = normalize(tag);
+        String normalizedKeyword = normalize(keyword);
+        String cacheKey = CACHE_PREFIX + sort + ":" + page + ":" + limit + ":" + normalizedMonitorKeyword + ":" + executionId + ":" + normalizedTag + ":" + normalizedKeyword;
 
         Page<Hotspot> hotspotPage = switch (sort) {
-            case "importance" -> hotspotRepository.findByTagAndKeywordOrderByImportanceScore(tag, normalize(keyword), PageRequest.of(page - 1, limit));
-            case "relevance"  -> hotspotRepository.findByTagAndKeywordOrderByRelevanceScore(tag, normalize(keyword), PageRequest.of(page - 1, limit));
-            case "time"       -> hotspotRepository.findByTagAndKeywordOrderByCreatedAtDesc(tag, normalize(keyword), PageRequest.of(page - 1, limit));
-            default           -> hotspotRepository.findByTagAndKeywordOrderByHotScore(tag, normalize(keyword), PageRequest.of(page - 1, limit));
+            case "importance" -> hotspotRepository.findByTagAndKeywordOrderByImportanceScore(normalizedMonitorKeyword, executionId, normalizedTag, normalizedKeyword, PageRequest.of(page - 1, limit));
+            case "relevance"  -> hotspotRepository.findByTagAndKeywordOrderByRelevanceScore(normalizedMonitorKeyword, executionId, normalizedTag, normalizedKeyword, PageRequest.of(page - 1, limit));
+            case "time"       -> hotspotRepository.findByTagAndKeywordOrderByCreatedAtDesc(normalizedMonitorKeyword, executionId, normalizedTag, normalizedKeyword, PageRequest.of(page - 1, limit));
+            default           -> hotspotRepository.findByTagAndKeywordOrderByHotScore(normalizedMonitorKeyword, executionId, normalizedTag, normalizedKeyword, PageRequest.of(page - 1, limit));
         };
 
         List<HotspotResponse> items = hotspotPage.getContent().stream()

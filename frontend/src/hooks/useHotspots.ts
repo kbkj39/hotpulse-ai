@@ -9,7 +9,10 @@ export function useHotspots() {
   const fetchHotspots = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await api.getHotspots(filter)
+      const requestFilter = filter.monitorKeyword
+        ? { ...filter, keyword: undefined }
+        : filter
+      const result = await api.getHotspots(requestFilter)
       setHotspots(result.items, result.total)
     } catch (err) {
       console.error('Failed to fetch hotspots:', err)

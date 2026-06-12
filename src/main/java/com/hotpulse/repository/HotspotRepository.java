@@ -24,60 +24,96 @@ public interface HotspotRepository extends JpaRepository<Hotspot, Long> {
             Pageable pageable);
 
     @Query("""
-            SELECT h FROM Hotspot h, Document d
-            WHERE d.id = h.documentId
+            SELECT h FROM Hotspot h
+            JOIN Document d ON d.id = h.documentId
+            LEFT JOIN AgentExecution ae ON ae.id = h.executionId
+            WHERE (CAST(:monitorKeyword AS string) IS NULL OR ae.query = CONCAT('监控抓取: ', CAST(:monitorKeyword AS string)))
+              AND (:executionId IS NULL OR h.executionId = :executionId)
               AND (CAST(:tag AS string) IS NULL OR h.tags LIKE CONCAT('%', CAST(:tag AS string), '%'))
               AND (CAST(:keyword AS string) IS NULL
                    OR LOWER(COALESCE(d.title, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
                    OR LOWER(COALESCE(d.summary, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
                    OR LOWER(COALESCE(d.content, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
                    OR LOWER(COALESCE(d.sourceName, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
-                   OR LOWER(COALESCE(h.tags, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+                   OR LOWER(COALESCE(h.tags, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
+                   OR LOWER(COALESCE(ae.query, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
             ORDER BY h.hotScore DESC
             """)
-    Page<Hotspot> findByTagAndKeywordOrderByHotScore(@Param("tag") String tag, @Param("keyword") String keyword, Pageable pageable);
+    Page<Hotspot> findByTagAndKeywordOrderByHotScore(
+            @Param("monitorKeyword") String monitorKeyword,
+            @Param("executionId") Long executionId,
+            @Param("tag") String tag,
+            @Param("keyword") String keyword,
+            Pageable pageable);
 
     @Query("""
-            SELECT h FROM Hotspot h, Document d
-            WHERE d.id = h.documentId
+            SELECT h FROM Hotspot h
+            JOIN Document d ON d.id = h.documentId
+            LEFT JOIN AgentExecution ae ON ae.id = h.executionId
+            WHERE (CAST(:monitorKeyword AS string) IS NULL OR ae.query = CONCAT('监控抓取: ', CAST(:monitorKeyword AS string)))
+              AND (:executionId IS NULL OR h.executionId = :executionId)
               AND (CAST(:tag AS string) IS NULL OR h.tags LIKE CONCAT('%', CAST(:tag AS string), '%'))
               AND (CAST(:keyword AS string) IS NULL
                    OR LOWER(COALESCE(d.title, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
                    OR LOWER(COALESCE(d.summary, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
                    OR LOWER(COALESCE(d.content, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
                    OR LOWER(COALESCE(d.sourceName, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
-                   OR LOWER(COALESCE(h.tags, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+                   OR LOWER(COALESCE(h.tags, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
+                   OR LOWER(COALESCE(ae.query, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
             ORDER BY h.importanceScore DESC
             """)
-    Page<Hotspot> findByTagAndKeywordOrderByImportanceScore(@Param("tag") String tag, @Param("keyword") String keyword, Pageable pageable);
+    Page<Hotspot> findByTagAndKeywordOrderByImportanceScore(
+            @Param("monitorKeyword") String monitorKeyword,
+            @Param("executionId") Long executionId,
+            @Param("tag") String tag,
+            @Param("keyword") String keyword,
+            Pageable pageable);
 
     @Query("""
-            SELECT h FROM Hotspot h, Document d
-            WHERE d.id = h.documentId
+            SELECT h FROM Hotspot h
+            JOIN Document d ON d.id = h.documentId
+            LEFT JOIN AgentExecution ae ON ae.id = h.executionId
+            WHERE (CAST(:monitorKeyword AS string) IS NULL OR ae.query = CONCAT('监控抓取: ', CAST(:monitorKeyword AS string)))
+              AND (:executionId IS NULL OR h.executionId = :executionId)
               AND (CAST(:tag AS string) IS NULL OR h.tags LIKE CONCAT('%', CAST(:tag AS string), '%'))
               AND (CAST(:keyword AS string) IS NULL
                    OR LOWER(COALESCE(d.title, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
                    OR LOWER(COALESCE(d.summary, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
                    OR LOWER(COALESCE(d.content, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
                    OR LOWER(COALESCE(d.sourceName, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
-                   OR LOWER(COALESCE(h.tags, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+                   OR LOWER(COALESCE(h.tags, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
+                   OR LOWER(COALESCE(ae.query, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
             ORDER BY h.relevanceScore DESC
             """)
-    Page<Hotspot> findByTagAndKeywordOrderByRelevanceScore(@Param("tag") String tag, @Param("keyword") String keyword, Pageable pageable);
+    Page<Hotspot> findByTagAndKeywordOrderByRelevanceScore(
+            @Param("monitorKeyword") String monitorKeyword,
+            @Param("executionId") Long executionId,
+            @Param("tag") String tag,
+            @Param("keyword") String keyword,
+            Pageable pageable);
 
     @Query("""
-            SELECT h FROM Hotspot h, Document d
-            WHERE d.id = h.documentId
+            SELECT h FROM Hotspot h
+            JOIN Document d ON d.id = h.documentId
+            LEFT JOIN AgentExecution ae ON ae.id = h.executionId
+            WHERE (CAST(:monitorKeyword AS string) IS NULL OR ae.query = CONCAT('监控抓取: ', CAST(:monitorKeyword AS string)))
+              AND (:executionId IS NULL OR h.executionId = :executionId)
               AND (CAST(:tag AS string) IS NULL OR h.tags LIKE CONCAT('%', CAST(:tag AS string), '%'))
               AND (CAST(:keyword AS string) IS NULL
                    OR LOWER(COALESCE(d.title, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
                    OR LOWER(COALESCE(d.summary, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
                    OR LOWER(COALESCE(d.content, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
                    OR LOWER(COALESCE(d.sourceName, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
-                   OR LOWER(COALESCE(h.tags, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+                   OR LOWER(COALESCE(h.tags, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
+                   OR LOWER(COALESCE(ae.query, '')) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
             ORDER BY h.createdAt DESC
             """)
-    Page<Hotspot> findByTagAndKeywordOrderByCreatedAtDesc(@Param("tag") String tag, @Param("keyword") String keyword, Pageable pageable);
+    Page<Hotspot> findByTagAndKeywordOrderByCreatedAtDesc(
+            @Param("monitorKeyword") String monitorKeyword,
+            @Param("executionId") Long executionId,
+            @Param("tag") String tag,
+            @Param("keyword") String keyword,
+            Pageable pageable);
 
     @Query(value = """
             WITH filtered AS (

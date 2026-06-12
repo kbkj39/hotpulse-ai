@@ -20,6 +20,8 @@ export interface HotspotFilter {
   sort: 'hot' | 'importance' | 'relevance' | 'time'
   tag?: string
   keyword?: string
+  monitorKeyword?: string
+  executionId?: string
   page: number
   limit: number
 }

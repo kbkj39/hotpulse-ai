@@ -23,8 +23,10 @@ public class HotspotController {
             @RequestParam(defaultValue = "20") int limit,
             @RequestParam(required = false) String tag,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String monitorKeyword,
+            @RequestParam(required = false) Long executionId,
             @RequestParam(defaultValue = "1") int page) {
-        return Result.ok(hotspotService.getHotspots(sort, page, limit, tag, keyword));
+        return Result.ok(hotspotService.getHotspots(sort, page, limit, monitorKeyword, executionId, tag, keyword));
     }
 
     @GetMapping("/trends")

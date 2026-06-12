@@ -57,7 +57,7 @@ export function Layout() {
           </NavLink>
         ))}
       </nav>
-      <main style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <main style={{ padding: '20px 18px 24px', maxWidth: '1560px', margin: '0 auto' }}>
         <Outlet />
       </main>
     </div>

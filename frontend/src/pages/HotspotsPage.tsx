@@ -13,9 +13,7 @@ export function HotspotsPage() {
   const { keywords, loading: keywordsLoading, error: keywordsError, createKeyword, toggleKeyword, deleteKeyword, triggerKeyword, triggerAllKeywords, updateInterval } = useMonitorKeywords()
   useSocket()
   const [trendInterval, setTrendInterval] = useState<'hour' | 'day'>('hour')
-  const activeMonitorKeyword = keywords.some((item) => item.keyword === filter.keyword)
-    ? filter.keyword
-    : undefined
+  const activeMonitorKeyword = filter.monitorKeyword
   const freeTextKeyword = activeMonitorKeyword ? undefined : filter.keyword
   const trendScopeText = activeMonitorKeyword
     ? `当前主题：${activeMonitorKeyword}`
@@ -26,22 +24,36 @@ export function HotspotsPage() {
         : '全部热点'
 
   return (
-    <div>
+    <div style={{ height: 'calc(100vh - 96px)', minHeight: 0, overflow: 'hidden' }}>
       <div
         style={{
           display: 'flex',
           alignItems: 'flex-start',
-          gap: '22px',
+          gap: '18px',
           flexWrap: 'wrap',
+          height: '100%',
+          minHeight: 0,
+          overflow: 'hidden',
         }}
       >
-        <aside style={{ flex: '0 0 390px', maxWidth: '100%' }}>
+        <aside
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            flex: '0 0 460px',
+            maxWidth: '100%',
+            height: '100%',
+            minHeight: 0,
+            overflow: 'hidden',
+          }}
+        >
           <MonitorKeywordPanel
             keywords={keywords}
             activeKeyword={filter.keyword}
             loading={keywordsLoading}
             error={keywordsError}
-            onApply={(keyword) => setFilter({ keyword, page: 1 })}
+            onApply={(keyword, executionId) => setFilter({ keyword, monitorKeyword: keyword, executionId: executionId ?? undefined, page: 1 })}
             onCreate={createKeyword}
             onToggle={toggleKeyword}
             onDelete={deleteKeyword}
@@ -52,7 +64,7 @@ export function HotspotsPage() {
           />
           <section
             style={{
-              marginTop: '16px',
+              flex: '0 0 auto',
               padding: '16px',
               border: '1px solid #202020',
               borderRadius: '8px',
@@ -144,8 +156,10 @@ export function HotspotsPage() {
         <section
           style={{
             display: 'flex',
-            flex: '1 1 560px',
+            flex: '1 1 620px',
             minWidth: 0,
+            height: '100%',
+            minHeight: 0,
             flexDirection: 'column',
           }}
         >
@@ -218,10 +232,22 @@ export function HotspotsPage() {
                 flexWrap: 'wrap',
               }}
             >
-              <HotspotFilterBar filter={filter} onChange={setFilter} compact />
+              <HotspotFilterBar
+                filter={filter}
+                onChange={(nextFilter) =>
+                  setFilter({
+                    ...nextFilter,
+                    monitorKeyword: nextFilter.keyword !== undefined ? undefined : filter.monitorKeyword,
+                    executionId: nextFilter.keyword !== undefined ? undefined : filter.executionId,
+                  })
+                }
+                compact
+              />
             </div>
           </div>
-          {loading ? <LoadingSpinner /> : <HotspotList hotspots={hotspots} />}
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '2px' }}>
+            {loading ? <LoadingSpinner /> : <HotspotList hotspots={hotspots} />}
+          </div>
         </section>
       </div>
     </div>

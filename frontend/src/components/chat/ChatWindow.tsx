@@ -18,26 +18,40 @@ export function ChatWindow({ messages }: ChatWindowProps) {
       style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '16px',
-        border: '2px solid #1F1F1F',
-        borderBottom: '2px solid #1F1F1F',
-        background: '#000',
+        padding: '20px 22px',
+        background: '#020202',
       }}
     >
       {messages.length === 0 && (
-        <p
+        <div
           style={{
+            maxWidth: '520px',
+            margin: '72px auto 0',
             textAlign: 'center',
-            marginTop: '64px',
-            fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-            fontSize: '13px',
-            color: '#2E2E2E',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
           }}
         >
-          输入问题开始对话
-        </p>
+          <div
+            style={{
+              fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+              fontSize: '13px',
+              color: '#888',
+              marginBottom: '10px',
+            }}
+          >
+            开始一次分析
+          </div>
+          <p
+            style={{
+              margin: 0,
+              fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
+              fontSize: '14px',
+              color: '#555',
+              lineHeight: 1.7,
+            }}
+          >
+            你可以直接提问，也可以先从右侧选择一个热点，再围绕该新闻追问背景、可信度或影响。
+          </p>
+        </div>
       )}
       {messages.map((msg, i) => (
         <MessageBubble key={i} message={msg} />

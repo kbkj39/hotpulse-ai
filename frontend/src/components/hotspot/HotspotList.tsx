@@ -5,6 +5,7 @@ interface HotspotListProps {
   hotspots: Hotspot[]
   selectable?: boolean
   selectedHotspotId?: number | null
+  compact?: boolean
   onSelectHotspot?: (hotspot: Hotspot) => void
 }
 
@@ -12,6 +13,7 @@ export function HotspotList({
   hotspots,
   selectable,
   selectedHotspotId,
+  compact,
   onSelectHotspot,
 }: HotspotListProps) {
   if (hotspots.length === 0) {
@@ -40,6 +42,7 @@ export function HotspotList({
           hotspot={h}
           selectable={selectable}
           selected={selectedHotspotId === h.id}
+          compact={compact}
           onSelect={onSelectHotspot}
         />
       ))}

@@ -24,10 +24,10 @@ export function PinnedHotspotBar({ hotspot, onClear }: PinnedHotspotBarProps) {
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
-        marginTop: '8px',
         padding: '8px 12px',
-        border: '1px solid #2A2A2A',
-        background: '#0A0A0A',
+        border: '1px solid #263A2A',
+        background: '#071107',
+        borderRadius: '8px',
       }}
     >
       <span
@@ -35,12 +35,11 @@ export function PinnedHotspotBar({ hotspot, onClear }: PinnedHotspotBarProps) {
           fontFamily: MONO,
           fontSize: '10px',
           color: '#9CE6A3',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
           flexShrink: 0,
         }}
       >
-        讨论中
+        当前热点
       </span>
       <span
         style={{
@@ -63,12 +62,11 @@ export function PinnedHotspotBar({ hotspot, onClear }: PinnedHotspotBarProps) {
         style={{
           border: '1px solid #1F1F1F',
           background: 'transparent',
-          color: '#666',
+          color: '#888',
           fontFamily: MONO,
           fontSize: '10px',
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
           padding: '3px 8px',
+          borderRadius: '5px',
           cursor: 'pointer',
           flexShrink: 0,
         }}

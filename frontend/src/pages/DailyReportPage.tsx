@@ -26,7 +26,8 @@ const buttonStyle: CSSProperties = {
   fontSize: '11px',
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
-  padding: '4px 12px',
+  padding: '5px 12px',
+  borderRadius: '5px',
   cursor: 'pointer',
   transition: 'all 150ms ease',
 }
@@ -106,7 +107,7 @@ export function DailyReportPage() {
           onMouseEnter={(e) => hoverButton(e, isBusy)}
           onMouseLeave={(e) => unhoverButton(e, isBusy)}
         >
-          REFRESH
+          刷新
         </button>
         <button
           onClick={handleRegenerate}
@@ -119,7 +120,7 @@ export function DailyReportPage() {
           onMouseEnter={(e) => hoverButton(e, !canRegenerate)}
           onMouseLeave={(e) => unhoverButton(e, !canRegenerate)}
         >
-          {regenerating ? 'REGENERATING…' : 'REGENERATE'}
+          {regenerating ? '生成中…' : '生成日报'}
         </button>
       </div>
 
@@ -206,7 +207,7 @@ export function DailyReportPage() {
                 letterSpacing: '0.05em',
               }}
             >
-              {report.hotspotCount != null ? `${report.hotspotCount} ITEMS` : '—'}
+              {report.hotspotCount != null ? `${report.hotspotCount} 条热点` : '—'}
               {report.generatedAt
                 ? ` · ${new Date(report.generatedAt).toLocaleString('zh-CN')}`
                 : ''}

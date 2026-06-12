@@ -7,13 +7,14 @@ export function SourceTag({ source }: SourceTagProps) {
     <span
       style={{
         display: 'inline-block',
-        border: '1px solid #2E2E2E',
-        padding: '1px 6px',
-        fontSize: '12px',
+        border: '1px solid #303030',
+        background: '#050505',
+        padding: '2px 7px',
+        fontSize: '11px',
         fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-        color: '#888',
-        letterSpacing: '0.03em',
-        textTransform: 'uppercase',
+        color: '#A0A0A0',
+        letterSpacing: '0',
+        borderRadius: '4px',
       }}
     >
       {source}

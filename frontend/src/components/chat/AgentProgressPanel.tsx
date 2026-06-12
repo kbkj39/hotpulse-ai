@@ -17,26 +17,24 @@ export function AgentProgressPanel({ steps }: AgentProgressPanelProps) {
   return (
     <div
       style={{
-        border: '2px solid #1F1F1F',
-        borderTop: 'none',
-        padding: '10px 12px',
-        maxHeight: '160px',
+        borderTop: '1px solid #151515',
+        padding: '10px 14px',
+        maxHeight: '140px',
         overflowY: 'auto',
-        background: '#000',
+        background: '#030303',
       }}
     >
       <p
         style={{
           fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
           fontSize: '11px',
-          color: '#333',
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
+          color: '#666',
+          letterSpacing: '0.04em',
           marginBottom: '8px',
           margin: '0 0 8px 0',
         }}
       >
-        AGENT TRACE
+        执行进度
       </p>
       {steps.map((step, i) => {
         const dot = STATUS_DOT[step.status] ?? { symbol: '·', color: '#333' }
@@ -48,14 +46,14 @@ export function AgentProgressPanel({ steps }: AgentProgressPanelProps) {
               alignItems: 'flex-start',
               gap: '8px',
               fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-              fontSize: '12px',
+              fontSize: '11px',
               marginBottom: '4px',
               lineHeight: 1.5,
             }}
           >
             <span style={{ color: dot.color, flexShrink: 0, marginTop: '1px' }}>{dot.symbol}</span>
             <span style={{ color: '#555', flexShrink: 0 }}>[{step.agentName}]</span>
-            <span style={{ flex: 1, color: '#666' }}>{step.message}</span>
+            <span style={{ flex: 1, color: '#777' }}>{step.message}</span>
             <span style={{ color: '#2E2E2E', fontSize: '11px', whiteSpace: 'nowrap' }}>
               {step.timestamp ? new Date(step.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}
             </span>

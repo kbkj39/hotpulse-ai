@@ -49,51 +49,66 @@ export function ChatPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 96px)' }}>
-      {/* Page title */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 96px)', minHeight: 0 }}>
       <div
         style={{
           display: 'flex',
-          alignItems: 'baseline',
-          marginBottom: '16px',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: '20px',
+          marginBottom: '18px',
           paddingBottom: '16px',
           borderBottom: '2px solid #1F1F1F',
+          flexWrap: 'wrap',
         }}
       >
-        <h1
-          style={{
-            fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-            fontWeight: 600,
-            fontSize: '20px',
-            letterSpacing: '-0.02em',
-            color: '#fff',
-            margin: 0,
-          }}
-        >
-          智能对话
-        </h1>
+        <div>
+          <h1
+            style={{
+              fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+              fontWeight: 600,
+              fontSize: '22px',
+              letterSpacing: '0',
+              color: '#fff',
+              margin: 0,
+            }}
+          >
+            智能对话
+          </h1>
+          <div
+            style={{
+              marginTop: '6px',
+              fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
+              fontSize: '13px',
+              color: '#777',
+            }}
+          >
+            直接提问，或从右侧选择一个热点作为上下文继续分析。
+          </div>
+        </div>
         {isRunning && (
           <span
             style={{
-              marginLeft: '12px',
+              marginTop: '4px',
               fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
               fontSize: '11px',
-              color: '#555',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
+              color: '#9CE6A3',
+              letterSpacing: '0.04em',
+              border: '1px solid #263A2A',
+              background: '#071107',
+              borderRadius: '5px',
+              padding: '5px 9px',
             }}
           >
-            PROCESSING…
+            正在处理…
           </span>
         )}
       </div>
 
-      {/* Body: history sidebar + chat area */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden', border: '1px solid #1F1F1F', borderRadius: '8px' }}>
         <ConversationHistoryPanel onLoadConversation={handleLoadConversation} />
 
-        {/* Chat column */}
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, overflow: 'hidden', background: '#020202' }}>
           <ChatWindow messages={messages} />
           <AgentProgressPanel steps={steps} />
           <ChatInput
@@ -111,28 +126,28 @@ export function ChatPage() {
           />
         </div>
 
-        {/* Right hotspots sidebar */}
-        <div style={{ width: '360px', minWidth: '300px', borderLeft: '2px solid #1F1F1F', background: '#000', overflow: 'hidden' }}>
-          <div style={{ padding: '12px', borderBottom: '1px solid #1F1F1F' }}>
+        <aside style={{ width: '340px', minWidth: '300px', borderLeft: '1px solid #1F1F1F', background: '#000', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '14px', borderBottom: '1px solid #1F1F1F' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <h3 style={{ fontFamily: "'Fira Code', monospace", fontSize: '12px', color: '#888', margin: 0 }}>热点</h3>
-              <span style={{ fontFamily: "'Fira Code', monospace", fontSize: '11px', color: '#333' }}>{total} ITEMS</span>
+              <h3 style={{ fontFamily: "'Fira Code', 'Noto Sans SC', monospace", fontSize: '13px', color: '#E6E6E6', margin: 0 }}>相关热点</h3>
+              <span style={{ fontFamily: "'Fira Code', 'Noto Sans SC', monospace", fontSize: '11px', color: '#666' }}>{total} 条</span>
             </div>
             <HotspotFilterBar filter={filter} onChange={setFilter} />
           </div>
-          <div style={{ height: '100%', overflowY: 'auto' }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 12px 12px' }}>
             {loading ? (
-              <div style={{ padding: '24px' }}>加载中…</div>
+              <div style={{ padding: '24px', color: '#666', fontFamily: "'Fira Code', 'Noto Sans SC', monospace", fontSize: '12px' }}>加载中…</div>
             ) : (
               <HotspotList
                 hotspots={hotspots}
                 selectable
+                compact
                 selectedHotspotId={pinnedHotspot?.id ?? null}
                 onSelectHotspot={handleHotspotSelect}
               />
             )}
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   )

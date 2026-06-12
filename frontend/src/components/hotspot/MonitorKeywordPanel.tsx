@@ -119,7 +119,7 @@ function KeywordCard({
   }
 
   return (
-    <div style={{ borderTop: '1px solid #151515', paddingTop: '8px', paddingBottom: '6px' }}>
+    <div style={{ borderTop: '1px solid #151515', padding: '10px 0 8px' }}>
       {/* ── 主控制行 ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
         {/* 展开/折叠箭头 */}
@@ -152,7 +152,7 @@ function KeywordCard({
             background: 'transparent',
             color: item.enabled ? (selected ? '#fff' : '#ccc') : '#444',
             fontFamily: MONO,
-            fontSize: '13px',
+            fontSize: '14px',
             padding: '0',
             cursor: 'pointer',
             textDecoration: selected ? 'underline' : 'none',
@@ -169,15 +169,16 @@ function KeywordCard({
           title={item.enabled ? '点击禁用' : '点击启用'}
           style={{
             border: '1px solid #1F1F1F',
-            background: 'transparent',
-            color: item.enabled ? '#9CE6A3' : '#555',
+            background: item.enabled ? '#101810' : 'transparent',
+            color: item.enabled ? '#9CE6A3' : '#666',
             fontFamily: MONO,
             fontSize: '10px',
             padding: '2px 6px',
+            borderRadius: '4px',
             cursor: 'pointer',
           }}
         >
-          {item.enabled ? 'ON' : 'OFF'}
+          {item.enabled ? '启用' : '停用'}
         </button>
 
         {/* DEL */}
@@ -188,14 +189,15 @@ function KeywordCard({
           style={{
             border: '1px solid #1F1F1F',
             background: 'transparent',
-            color: '#666',
+            color: '#777',
             fontFamily: MONO,
             fontSize: '10px',
             padding: '2px 6px',
+            borderRadius: '4px',
             cursor: 'pointer',
           }}
         >
-          DEL
+          删除
         </button>
 
         <span style={{ flex: 1 }} />
@@ -212,11 +214,12 @@ function KeywordCard({
           disabled={triggering}
           style={{
             border: '1px solid #2A2A2A',
-            background: 'transparent',
+            background: triggering ? 'transparent' : '#081108',
             color: triggering ? '#555' : '#9CE6A3',
             fontFamily: MONO,
             fontSize: '11px',
             padding: '3px 10px',
+            borderRadius: '5px',
             cursor: triggering ? 'wait' : 'pointer',
             whiteSpace: 'nowrap',
           }}
@@ -235,7 +238,7 @@ function KeywordCard({
             color: '#555',
           }}
         >
-          <span>定时</span>
+          <span>间隔</span>
           <input
             type="number"
             min={1}
@@ -255,7 +258,7 @@ function KeywordCard({
               textAlign: 'center',
             }}
           />
-          <span>h</span>
+          <span>小时</span>
           <button
             type="button"
             onClick={handleSaveInterval}
@@ -267,6 +270,7 @@ function KeywordCard({
               fontFamily: MONO,
               fontSize: '10px',
               padding: '2px 6px',
+              borderRadius: '4px',
               cursor: saving ? 'wait' : 'pointer',
             }}
           >
@@ -417,7 +421,15 @@ export function MonitorKeywordPanel({
   }
 
   return (
-    <section style={{ paddingBottom: '18px', marginBottom: '18px', borderBottom: '1px solid #1F1F1F' }}>
+    <section
+      style={{
+        padding: '16px 18px',
+        marginBottom: '22px',
+        border: '1px solid #1F1F1F',
+        borderRadius: '8px',
+        background: '#030303',
+      }}
+    >
       {/* 标题行 */}
       <div
         style={{
@@ -440,10 +452,10 @@ export function MonitorKeywordPanel({
               marginBottom: '4px',
             }}
           >
-            Monitor
+            监控关键词
           </div>
           <div style={{ fontFamily: SANS, fontSize: '13px', color: '#888' }}>
-            保存你想关注的话题，支持定时自动抓取，一键跳转匹配热点。
+            保存关注主题，手动或定时抓取新闻，并把趋势图和热点列表切到对应范围。
           </div>
         </div>
         {activeKeyword && (
@@ -460,7 +472,7 @@ export function MonitorKeywordPanel({
               cursor: 'pointer',
             }}
           >
-            Clear filter
+            清除筛选
           </button>
         )}
       </div>
@@ -489,12 +501,13 @@ export function MonitorKeywordPanel({
             type="submit"
             disabled={submitting}
             style={{
-              border: '1px solid #fff',
-              background: '#fff',
-              color: '#000',
+              border: '1px solid #E6E6E6',
+              background: '#E6E6E6',
+              color: '#050505',
               fontFamily: MONO,
               fontSize: '11px',
               padding: '8px 14px',
+              borderRadius: '5px',
               cursor: submitting ? 'wait' : 'pointer',
               opacity: submitting ? 0.7 : 1,
               whiteSpace: 'nowrap',
@@ -514,7 +527,7 @@ export function MonitorKeywordPanel({
           flexWrap: 'wrap',
           marginBottom: '14px',
           paddingBottom: '12px',
-          borderBottom: '1px solid #111',
+          borderBottom: '1px solid #151515',
         }}
       >
         <button
@@ -523,16 +536,17 @@ export function MonitorKeywordPanel({
           disabled={triggeringAll || keywords.filter((k) => k.enabled).length === 0}
           style={{
             border: '1px solid #2A2A2A',
-            background: 'transparent',
+            background: triggeringAll ? 'transparent' : '#081108',
             color: triggeringAll ? '#555' : '#9CE6A3',
             fontFamily: MONO,
             fontSize: '11px',
             padding: '5px 12px',
+            borderRadius: '5px',
             cursor: triggeringAll ? 'wait' : 'pointer',
             whiteSpace: 'nowrap',
           }}
         >
-          {triggeringAll ? '搜索中…' : '立即搜索全部关键词'}
+          {triggeringAll ? '搜索中…' : '搜索全部'}
         </button>
 
         <div
@@ -545,7 +559,7 @@ export function MonitorKeywordPanel({
             color: '#555',
           }}
         >
-          <span>定时搜索全部关键词</span>
+          <span>全部关键词间隔</span>
           <input
             type="number"
             min={1}
@@ -577,10 +591,11 @@ export function MonitorKeywordPanel({
               fontFamily: MONO,
               fontSize: '10px',
               padding: '3px 8px',
+              borderRadius: '4px',
               cursor: savingGlobal ? 'wait' : 'pointer',
             }}
           >
-            {savingGlobal ? '…' : '更新全部'}
+            {savingGlobal ? '…' : '保存'}
           </button>
         </div>
       </div>

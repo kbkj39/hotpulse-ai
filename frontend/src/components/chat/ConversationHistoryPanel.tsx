@@ -54,19 +54,19 @@ export function ConversationHistoryPanel({ onLoadConversation }: ConversationHis
   return (
     <div
       style={{
-        width: '220px',
-        minWidth: '220px',
-        borderRight: '2px solid #1F1F1F',
+        width: '230px',
+        minWidth: '230px',
+        borderRight: '1px solid #1F1F1F',
         display: 'flex',
         flexDirection: 'column',
-        background: '#000',
+        background: '#030303',
         overflow: 'hidden',
       }}
     >
       {/* Header */}
       <div
         style={{
-          padding: '0 12px 12px',
+          padding: '14px 12px',
           borderBottom: '1px solid #1F1F1F',
           display: 'flex',
           alignItems: 'center',
@@ -76,10 +76,9 @@ export function ConversationHistoryPanel({ onLoadConversation }: ConversationHis
         <span
           style={{
             fontFamily: "'Fira Code', monospace",
-            fontSize: '11px',
-            letterSpacing: '0.1em',
-            color: '#555',
-            textTransform: 'uppercase',
+            fontSize: '12px',
+            letterSpacing: '0.04em',
+            color: '#888',
           }}
         >
           历史对话
@@ -94,11 +93,12 @@ export function ConversationHistoryPanel({ onLoadConversation }: ConversationHis
             fontFamily: "'Fira Code', monospace",
             fontSize: '11px',
             padding: '2px 8px',
+            borderRadius: '5px',
             cursor: 'pointer',
-            letterSpacing: '0.05em',
+            letterSpacing: '0',
           }}
         >
-          + 新建
+          新建
         </button>
       </div>
 
@@ -127,10 +127,10 @@ export function ConversationHistoryPanel({ onLoadConversation }: ConversationHis
                 display: 'block',
                 width: '100%',
                 textAlign: 'left',
-                padding: '10px 12px',
-                background: isActive ? '#111' : 'none',
+                padding: '11px 12px',
+                background: isActive ? '#0D120D' : 'none',
                 border: 'none',
-                borderLeft: isActive ? '2px solid #39FF14' : '2px solid transparent',
+                borderLeft: isActive ? '2px solid #9CE6A3' : '2px solid transparent',
                 cursor: 'pointer',
                 borderBottom: '1px solid #111',
               }}
@@ -152,7 +152,7 @@ export function ConversationHistoryPanel({ onLoadConversation }: ConversationHis
                 style={{
                   fontFamily: "'Fira Code', monospace",
                   fontSize: '10px',
-                  color: '#333',
+                  color: isActive ? '#66806A' : '#444',
                   marginTop: '3px',
                   letterSpacing: '0.04em',
                 }}

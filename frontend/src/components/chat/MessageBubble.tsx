@@ -12,19 +12,20 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       style={{
         display: 'flex',
         justifyContent: isUser ? 'flex-end' : 'flex-start',
-        marginBottom: '12px',
+        marginBottom: '14px',
       }}
     >
       <div
         style={{
-          maxWidth: '72%',
-          padding: '10px 14px',
-          border: `1px solid ${isUser ? '#2E2E2E' : '#1F1F1F'}`,
-          background: isUser ? '#111' : 'transparent',
-          color: isUser ? '#fff' : '#ccc',
+          maxWidth: '76%',
+          padding: '11px 14px',
+          border: `1px solid ${isUser ? '#2A2A2A' : '#1F1F1F'}`,
+          background: isUser ? '#111' : '#050505',
+          color: isUser ? '#fff' : '#D0D0D0',
           fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
           fontSize: '14px',
           lineHeight: 1.7,
+          borderRadius: '8px',
         }}
       >
         {!isUser && (
@@ -32,13 +33,12 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             style={{
               fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
               fontSize: '10px',
-              color: '#444',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
+              color: '#666',
+              letterSpacing: '0.04em',
               marginBottom: '6px',
             }}
           >
-            ASSISTANT
+            助手
           </div>
         )}
         <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{message.content}</p>
@@ -49,7 +49,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             return (
               <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1F1F1F' }}>
                 <span style={{ fontFamily: "'Fira Code', 'Noto Sans SC', monospace", fontSize: '11px', color: '#444', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  SOURCES
+                  来源
                 </span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '4px' }}>
                   {sources.map((src, i) => (

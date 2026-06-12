@@ -49,7 +49,7 @@ export function HotspotTrendChart({
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err.message || 'Failed to fetch trends')
+          setError(err.message || '趋势数据加载失败')
         }
       })
       .finally(() => {
@@ -72,7 +72,7 @@ export function HotspotTrendChart({
   if (loading) {
     return (
       <div style={{ padding: '40px', textAlign: 'center', color: '#888' }}>
-        Loading trends...
+        正在加载趋势…
       </div>
     )
   }
@@ -80,7 +80,7 @@ export function HotspotTrendChart({
   if (error) {
     return (
       <div style={{ padding: '40px', textAlign: 'center', color: '#f44' }}>
-        Error: {error}
+        {error}
       </div>
     )
   }
@@ -88,7 +88,7 @@ export function HotspotTrendChart({
   if (data.length === 0) {
     return (
       <div style={{ padding: '40px', textAlign: 'center', color: '#888' }}>
-        No trend data available
+        暂无趋势数据
       </div>
     )
   }
@@ -121,14 +121,14 @@ export function HotspotTrendChart({
         }}
       >
         <span>{scopeLabel}</span>
-        <span>分数线为每个时间桶 Top 5 热点平均分</span>
+        <span>分数线为每个时间桶 Top 5 热点均值</span>
       </div>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={formattedData}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#202020" />
           <XAxis
             dataKey="time"
             stroke="#888"
@@ -138,18 +138,18 @@ export function HotspotTrendChart({
             yAxisId="left"
             stroke="#888"
             style={{ fontSize: '12px' }}
-            label={{ value: 'Score', angle: -90, position: 'insideLeft', fill: '#888' }}
+            label={{ value: '分数', angle: -90, position: 'insideLeft', fill: '#777' }}
           />
           <YAxis
             yAxisId="right"
             orientation="right"
             stroke="#888"
             style={{ fontSize: '12px' }}
-            label={{ value: 'Count', angle: 90, position: 'insideRight', fill: '#888' }}
+            label={{ value: '数量', angle: 90, position: 'insideRight', fill: '#777' }}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: '#1a1a1a',
+              backgroundColor: '#111',
               border: '1px solid #333',
               borderRadius: '4px',
               color: '#fff',
@@ -162,7 +162,7 @@ export function HotspotTrendChart({
             dataKey="avgHotScore"
             stroke="#8884d8"
             strokeWidth={2}
-            name="Top Hot Score"
+            name="Top 热度"
             dot={{ r: 4 }}
           />
           <Line
@@ -171,7 +171,7 @@ export function HotspotTrendChart({
             dataKey="avgImportanceScore"
             stroke="#82ca9d"
             strokeWidth={2}
-            name="Top Importance"
+            name="Top 重要性"
             dot={{ r: 4 }}
           />
           <Line
@@ -179,8 +179,8 @@ export function HotspotTrendChart({
             type="monotone"
             dataKey="count"
             stroke="#ffc658"
-            strokeWidth={2}
-            name="Hotspot Count"
+            strokeWidth={3}
+            name="热点数量"
             dot={{ r: 4 }}
           />
         </LineChart>

@@ -6,10 +6,10 @@ interface HotspotFilterProps {
 }
 
 const SORT_OPTIONS: { value: HotspotFilter['sort']; label: string }[] = [
-  { value: 'hot', label: 'HOT' },
-  { value: 'importance', label: 'IMP' },
-  { value: 'relevance', label: 'REL' },
-  { value: 'time', label: 'TIME' },
+  { value: 'hot', label: '热度' },
+  { value: 'importance', label: '重要' },
+  { value: 'relevance', label: '相关' },
+  { value: 'time', label: '最新' },
 ]
 
 export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
@@ -20,9 +20,10 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
         alignItems: 'center',
         gap: '8px',
         flexWrap: 'wrap',
-        marginBottom: '4px',
-        paddingBottom: '12px',
+        marginBottom: '8px',
+        padding: '10px 0 12px',
         borderBottom: '1px solid #1F1F1F',
+        borderTop: '1px solid #151515',
       }}
     >
       <span
@@ -35,7 +36,7 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
           marginRight: '4px',
         }}
       >
-        SORT
+        排序
       </span>
       {SORT_OPTIONS.map((opt) => {
         const isActive = filter.sort === opt.value
@@ -46,12 +47,13 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
             onClick={() => onChange({ sort: opt.value, page: 1 })}
             style={{
               padding: '3px 10px',
-              border: `1px solid ${isActive ? '#fff' : '#1F1F1F'}`,
-              background: isActive ? '#fff' : 'transparent',
-              color: isActive ? '#000' : '#555',
+              border: `1px solid ${isActive ? '#E6E6E6' : '#1F1F1F'}`,
+              background: isActive ? '#E6E6E6' : 'transparent',
+              color: isActive ? '#050505' : '#777',
               fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
               fontSize: '12px',
-              letterSpacing: '0.08em',
+              letterSpacing: '0',
+              borderRadius: '5px',
               cursor: 'pointer',
               transition: 'all 150ms ease',
             }}
@@ -63,7 +65,7 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
 
       <input
         type="text"
-        placeholder="# TAG"
+        placeholder="标签"
         value={filter.tag ?? ''}
         onChange={(e) => onChange({ tag: e.target.value || undefined, page: 1 })}
         style={{
@@ -74,9 +76,10 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
           color: '#888',
           fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
           fontSize: '12px',
-          letterSpacing: '0.05em',
+          letterSpacing: '0',
           outline: 'none',
           width: '120px',
+          borderRadius: '5px',
           transition: 'border-color 150ms ease',
         }}
         onFocus={(e) => (e.currentTarget.style.borderColor = '#fff')}
@@ -85,7 +88,7 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
 
       <input
         type="text"
-        placeholder="KEYWORD"
+        placeholder="全文关键词"
         value={filter.keyword ?? ''}
         onChange={(e) => onChange({ keyword: e.target.value || undefined, page: 1 })}
         style={{
@@ -95,9 +98,10 @@ export function HotspotFilterBar({ filter, onChange }: HotspotFilterProps) {
           color: '#888',
           fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
           fontSize: '12px',
-          letterSpacing: '0.05em',
+          letterSpacing: '0',
           outline: 'none',
-          width: '140px',
+          width: '150px',
+          borderRadius: '5px',
           transition: 'border-color 150ms ease',
         }}
         onFocus={(e) => (e.currentTarget.style.borderColor = '#fff')}

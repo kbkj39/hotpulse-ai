@@ -13,12 +13,14 @@ export function ScoreBadge({ label, value }: ScoreBadgeProps) {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '4px',
-        border: '1px solid #1F1F1F',
-        padding: '1px 6px',
-        fontSize: '12px',
+        border: '1px solid #242424',
+        background: '#050505',
+        padding: '2px 7px',
+        fontSize: '11px',
         fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
         color: `rgba(255,255,255,${opacity})`,
-        letterSpacing: '0.03em',
+        letterSpacing: '0',
+        borderRadius: '4px',
       }}
     >
       {label}<span style={{ color: '#555' }}>/</span>{pct}

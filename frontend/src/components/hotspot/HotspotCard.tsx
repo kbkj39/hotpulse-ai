@@ -7,10 +7,11 @@ interface HotspotCardProps {
   hotspot: Hotspot
   selectable?: boolean
   selected?: boolean
+  compact?: boolean
   onSelect?: (hotspot: Hotspot) => void
 }
 
-export function HotspotCard({ hotspot, selectable, selected, onSelect }: HotspotCardProps) {
+export function HotspotCard({ hotspot, selectable, selected, compact, onSelect }: HotspotCardProps) {
   const isUrl = (text?: string) => {
     if (!text) return false
     try {
@@ -51,7 +52,7 @@ export function HotspotCard({ hotspot, selectable, selected, onSelect }: Hotspot
       }
       style={{
         borderTop: '1px solid #1F1F1F',
-        padding: '16px 0',
+        padding: compact ? '13px 0' : '18px 0',
         transition: 'background 150ms ease, border-color 150ms ease',
         cursor: selectable ? 'pointer' : 'default',
         position: 'relative',
@@ -66,15 +67,15 @@ export function HotspotCard({ hotspot, selectable, selected, onSelect }: Hotspot
         if (!selected) e.currentTarget.style.background = 'transparent'
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: compact ? '10px' : '18px' }}>
         <div style={{ flex: 1 }}>
           <div
             style={{
               fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
               fontWeight: 600,
-              fontSize: '17px',
+              fontSize: compact ? '14px' : '18px',
               color: '#fff',
-              lineHeight: 1.3,
+              lineHeight: 1.35,
               cursor: 'default',
             }}
           >
@@ -87,7 +88,7 @@ export function HotspotCard({ hotspot, selectable, selected, onSelect }: Hotspot
             style={{
               fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
               fontSize: '12px',
-              color: '#444',
+              color: '#666',
               whiteSpace: 'nowrap',
             }}
           >
@@ -95,14 +96,16 @@ export function HotspotCard({ hotspot, selectable, selected, onSelect }: Hotspot
           </span>
 
           {/* link button with hover tooltip */}
-          <LinkButton
-            url={hotspot.url}
-            onNavigate={(e) => e.stopPropagation()}
-          />
+          {!compact && (
+            <LinkButton
+              url={hotspot.url}
+              onNavigate={(e) => e.stopPropagation()}
+            />
+          )}
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
         <SourceTag source={hotspot.source} />
         {hotspot.monitorKeyword && (
           <span
@@ -121,7 +124,7 @@ export function HotspotCard({ hotspot, selectable, selected, onSelect }: Hotspot
             ▶ {hotspot.monitorKeyword}
           </span>
         )}
-        {hotspot.tags && hotspot.tags.length > 0 ? hotspot.tags.map((tag) => (
+        {!compact && (hotspot.tags && hotspot.tags.length > 0 ? hotspot.tags.map((tag) => (
           <span
             key={tag}
             style={{
@@ -151,19 +154,20 @@ export function HotspotCard({ hotspot, selectable, selected, onSelect }: Hotspot
           >
             NO TAGS
           </span>
-        )}
+        ))}
       </div>
 
-      {hotspot.summary && (
+      {!compact && hotspot.summary && (
         <p
           style={{
             fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
-            fontSize: '13px',
-            color: '#666',
-            marginTop: '8px',
-            lineHeight: 1.6,
+            fontSize: '14px',
+            color: '#8A8A8A',
+            marginTop: '10px',
+            marginBottom: 0,
+            lineHeight: 1.7,
             display: '-webkit-box',
-            WebkitLineClamp: 2,
+            WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
           }}
@@ -172,20 +176,42 @@ export function HotspotCard({ hotspot, selectable, selected, onSelect }: Hotspot
         </p>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
-        <ScoreBadge label="真实" value={hotspot.truthScore} />
-        <ScoreBadge label="相关" value={hotspot.relevanceScore} />
-        <ScoreBadge label="重要" value={hotspot.importanceScore} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: compact ? '9px' : '12px', flexWrap: 'wrap' }}>
+        {!compact && <ScoreBadge label="真实" value={hotspot.truthScore} />}
+        {!compact && <ScoreBadge label="相关" value={hotspot.relevanceScore} />}
+        {!compact && <ScoreBadge label="重要" value={hotspot.importanceScore} />}
+        {compact && hotspot.url && (
+          <button
+            aria-label="打开原文"
+            title="打开原文"
+            onClick={(e) => {
+              e.stopPropagation()
+              window.open(hotspot.url, '_blank')
+            }}
+            style={{
+              border: '1px solid #242424',
+              background: 'transparent',
+              color: '#888',
+              fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+              fontSize: '11px',
+              padding: '2px 7px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            原文
+          </button>
+        )}
         <span
           style={{
             marginLeft: 'auto',
             fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
             fontSize: '12px',
-            color: '#444',
+            color: '#9CE6A3',
             letterSpacing: '0.05em',
           }}
         >
-          HOT {(hotspot.hotScore * 100).toFixed(0)}
+          热度 {(hotspot.hotScore * 100).toFixed(0)}
         </span>
       </div>
     </div>

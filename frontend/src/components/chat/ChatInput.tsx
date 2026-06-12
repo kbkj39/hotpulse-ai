@@ -29,9 +29,9 @@ export function ChatInput({ onSend, disabled, placeholder, pinnedHotspotBar }: C
   const canSend = !disabled && text.trim().length > 0
 
   return (
-    <div style={{ marginTop: '8px' }}>
+    <div style={{ padding: '12px 14px 14px', borderTop: '1px solid #1F1F1F', background: '#030303' }}>
       {pinnedHotspotBar}
-      <div style={{ display: 'flex', gap: '8px', marginTop: pinnedHotspotBar ? '8px' : 0 }}>
+      <div style={{ display: 'flex', gap: '10px', marginTop: pinnedHotspotBar ? '10px' : 0 }}>
       <textarea
         ref={textareaRef}
         value={text}
@@ -39,17 +39,18 @@ export function ChatInput({ onSend, disabled, placeholder, pinnedHotspotBar }: C
         onKeyDown={handleKeyDown}
         disabled={disabled}
         rows={2}
-        placeholder={placeholder ?? '输入问题，按 Enter 发送'}
+        placeholder={placeholder ?? '输入问题，Enter 发送，Shift + Enter 换行'}
         style={{
           flex: 1,
-          border: '2px solid #1F1F1F',
+          border: '1px solid #242424',
           background: disabled ? '#0A0A0A' : '#000',
           color: '#fff',
           fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
           fontSize: '14px',
-          padding: '8px 12px',
+          padding: '10px 12px',
           resize: 'none',
           outline: 'none',
+          borderRadius: '8px',
           transition: 'border-color 150ms ease',
           opacity: disabled ? 0.5 : 1,
         }}
@@ -60,20 +61,20 @@ export function ChatInput({ onSend, disabled, placeholder, pinnedHotspotBar }: C
         onClick={handleSend}
         disabled={!canSend}
         style={{
-          padding: '8px 20px',
-          border: `2px solid ${canSend ? '#fff' : '#1F1F1F'}`,
-          background: canSend ? '#fff' : 'transparent',
-          color: canSend ? '#000' : '#333',
+          padding: '8px 18px',
+          border: `1px solid ${canSend ? '#E6E6E6' : '#1F1F1F'}`,
+          background: canSend ? '#E6E6E6' : 'transparent',
+          color: canSend ? '#050505' : '#444',
           fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-          fontSize: '13px',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
+          fontSize: '12px',
+          letterSpacing: '0',
+          borderRadius: '8px',
           cursor: canSend ? 'pointer' : 'not-allowed',
           transition: 'all 150ms ease',
           alignSelf: 'stretch',
         }}
       >
-        SEND
+        发送
       </button>
       </div>
     </div>

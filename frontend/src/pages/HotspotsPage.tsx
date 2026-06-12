@@ -17,6 +17,13 @@ export function HotspotsPage() {
     ? filter.keyword
     : undefined
   const freeTextKeyword = activeMonitorKeyword ? undefined : filter.keyword
+  const trendScopeText = activeMonitorKeyword
+    ? `当前主题：${activeMonitorKeyword}`
+    : filter.tag
+      ? `当前标签：${filter.tag}`
+      : freeTextKeyword
+        ? `全文检索：${freeTextKeyword}`
+        : '全部热点'
 
   return (
     <div>
@@ -25,33 +32,47 @@ export function HotspotsPage() {
           display: 'flex',
           alignItems: 'baseline',
           justifyContent: 'space-between',
-          marginBottom: '20px',
+          gap: '20px',
+          marginBottom: '22px',
           paddingBottom: '16px',
           borderBottom: '2px solid #1F1F1F',
+          flexWrap: 'wrap',
         }}
       >
-        <h1
-          style={{
-            fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-            fontWeight: 600,
-            fontSize: '20px',
-            letterSpacing: '-0.02em',
-            color: '#fff',
-            margin: 0,
-          }}
-        >
-          热点雷达
-        </h1>
+        <div>
+          <h1
+            style={{
+              fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+              fontWeight: 600,
+              fontSize: '22px',
+              letterSpacing: '0',
+              color: '#fff',
+              margin: 0,
+            }}
+          >
+            热点雷达
+          </h1>
+          <div
+            style={{
+              marginTop: '6px',
+              fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
+              fontSize: '13px',
+              color: '#777',
+            }}
+          >
+            监控关键词、跟踪主题热度，并筛出值得继续追踪的新闻线索。
+          </div>
+        </div>
         <span
           style={{
             fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
             fontSize: '12px',
-            color: '#333',
+            color: '#888',
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
           }}
         >
-          {total} ITEMS
+          {total} 条热点
         </span>
       </div>
       <MonitorKeywordPanel
@@ -68,51 +89,86 @@ export function HotspotsPage() {
         onUpdateInterval={updateInterval}
         onCrawlDone={refetch}
       />
-      <div style={{ marginTop: '32px', marginBottom: '32px', padding: '20px', border: '1px solid #333', borderRadius: '8px', background: '#0a0a0a' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2
+      <section
+        style={{
+          marginTop: '28px',
+          marginBottom: '28px',
+          padding: '18px 20px 22px',
+          border: '1px solid #202020',
+          borderRadius: '8px',
+          background: '#050505',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: '16px',
+            marginBottom: '10px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+                fontWeight: 600,
+                fontSize: '17px',
+                letterSpacing: '0',
+                color: '#fff',
+                margin: 0,
+              }}
+            >
+              趋势观察
+            </h2>
+            <div
+              style={{
+                marginTop: '6px',
+                fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
+                fontSize: '13px',
+                color: '#777',
+              }}
+            >
+              {trendScopeText}
+            </div>
+          </div>
+          <div
+            role="tablist"
+            aria-label="趋势时间粒度"
             style={{
-              fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-              fontWeight: 600,
-              fontSize: '18px',
-              letterSpacing: '-0.02em',
-              color: '#fff',
-              margin: 0,
+              display: 'inline-flex',
+              border: '1px solid #242424',
+              borderRadius: '6px',
+              overflow: 'hidden',
+              flexShrink: 0,
             }}
           >
-            趋势分析
-          </h2>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => setTrendInterval('hour')}
-              style={{
-                padding: '6px 16px',
-                background: trendInterval === 'hour' ? '#8884d8' : '#1a1a1a',
-                color: '#fff',
-                border: '1px solid #333',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontFamily: "'Fira Code', monospace",
-              }}
-            >
-              按小时
-            </button>
-            <button
-              onClick={() => setTrendInterval('day')}
-              style={{
-                padding: '6px 16px',
-                background: trendInterval === 'day' ? '#8884d8' : '#1a1a1a',
-                color: '#fff',
-                border: '1px solid #333',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontFamily: "'Fira Code', monospace",
-              }}
-            >
-              按天
-            </button>
+            {[
+              ['hour', '按小时'],
+              ['day', '按天'],
+            ].map(([value, label]) => {
+              const active = trendInterval === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setTrendInterval(value as 'hour' | 'day')}
+                  style={{
+                    padding: '6px 14px',
+                    background: active ? '#E6E6E6' : 'transparent',
+                    color: active ? '#050505' : '#888',
+                    border: 'none',
+                    borderRight: value === 'hour' ? '1px solid #242424' : 'none',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+                  }}
+                >
+                  {label}
+                </button>
+              )
+            })}
           </div>
         </div>
         <HotspotTrendChart
@@ -121,7 +177,7 @@ export function HotspotsPage() {
           tag={filter.tag}
           keyword={freeTextKeyword}
         />
-      </div>
+      </section>
       <HotspotFilterBar filter={filter} onChange={setFilter} />
       {loading ? <LoadingSpinner /> : <HotspotList hotspots={hotspots} />}
     </div>

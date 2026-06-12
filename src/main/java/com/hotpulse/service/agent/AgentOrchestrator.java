@@ -35,6 +35,8 @@ public class AgentOrchestrator {
     private static final int MAX_CRAWL_CANDIDATES = 20;
     private static final int MAX_CRAWL_CANDIDATES_PER_SOURCE = 5;
     private static final int HOTSPOT_CONTEXT_MAX_CHARS = 4000;
+    private static final int CHAT_HOTSPOT_SEARCH_LIMIT = 8;
+    private static final int CHAT_HOTSPOT_CANDIDATE_LIMIT = 30;
 
     private final PlannerAgent plannerAgent;
     private final SearcherAgent searcherAgent;
@@ -64,6 +66,17 @@ public class AgentOrchestrator {
 
             if (hotspotId != null) {
                 executeHotspotChat(executionId, query, conversationId, hotspotId);
+                return;
+            }
+
+            if (isCasualChat(query)) {
+                executeCasualChat(executionId, query, conversationId);
+                return;
+            }
+
+            Optional<String> localSearchKeyword = extractHotspotSearchKeyword(query);
+            if (localSearchKeyword.isPresent()) {
+                executeHotspotLibrarySearch(executionId, query, conversationId, localSearchKeyword.get());
                 return;
             }
 
@@ -161,6 +174,54 @@ public class AgentOrchestrator {
         }
     }
 
+    private void executeCasualChat(Long executionId, String query, Long conversationId) {
+        tracker.recordStep(executionId, "Chat", AgentConstants.STATUS_RUNNING,
+                "正在识别对话意图...", null);
+        String answer = """
+                你好，我是 HotPulse AI，主要帮你围绕已抓取的财经热点做检索和分析。
+
+                你可以这样问：
+                - 搜索 A股 热点
+                - 苹果 AI 最近有哪些热点？
+                - 选中一条热点后，问它为什么重要、影响哪些公司、后续看什么
+                """;
+        tracker.recordStep(executionId, "Chat", AgentConstants.STATUS_DONE,
+                "已生成对话引导", null);
+        if (conversationId != null) {
+            saveAssistantMessage(conversationId, answer, java.util.List.of());
+        }
+        executionService.markDone(executionId);
+        sendFinalEvent(executionId, java.util.List.of(), answer, "对话完成");
+    }
+
+    private void executeHotspotLibrarySearch(Long executionId, String query, Long conversationId, String keyword) {
+        tracker.recordStep(executionId, "Intent", AgentConstants.STATUS_DONE,
+                "识别为热点库检索，关键词：" + keyword, null);
+        tracker.recordStep(executionId, "HotspotSearch", AgentConstants.STATUS_RUNNING,
+                "正在检索已有热点库...", null);
+
+        @SuppressWarnings("unchecked")
+        List<HotspotResponse> candidates = (List<HotspotResponse>) hotspotService
+                .getHotspots("relevance", 1, CHAT_HOTSPOT_CANDIDATE_LIMIT, null, null, null, keyword)
+                .getOrDefault("items", java.util.List.of());
+        List<HotspotResponse> hotspots = rankChatHotspotResults(keyword, candidates)
+                .stream()
+                .limit(CHAT_HOTSPOT_SEARCH_LIMIT)
+                .toList();
+
+        String answer = buildHotspotLibraryAnswer(keyword, hotspots);
+        tracker.recordStep(executionId, "HotspotSearch", AgentConstants.STATUS_DONE,
+                hotspots.isEmpty() ? "热点库暂无匹配内容" : "已找到 " + hotspots.size() + " 条相关热点", null);
+
+        if (conversationId != null) {
+            saveAssistantMessage(conversationId, answer, java.util.List.of());
+        }
+
+        executionService.markDone(executionId);
+        sendFinalDtoEvent(executionId, hotspots, answer,
+                hotspots.isEmpty() ? "检索完成，暂无匹配热点" : "检索完成，共返回 " + hotspots.size() + " 条热点");
+    }
+
     /**
      * 热点上下文对话：基于已选热点资料 + 对话历史回答，不触发搜索/抓取管线。
      */
@@ -246,10 +307,124 @@ public class AgentOrchestrator {
                     """.formatted(historyContext, query);
         }
         return """
-                你是 HotPulse AI，一个专注财经热点的智能助手。
+                你是 HotPulse AI，一个专注财经热点的分析助手。你的核心能力是基于已抓取热点、信息源和对话历史做解释、归纳与判断辅助。
                 用户消息：%s
-                请以友好、简洁的方式回答。
+                如果用户想搜索最新内容，请说明你会优先检索当前热点库；如果库内没有内容，引导用户去热点雷达添加或触发监控关键词。
+                请以克制、清晰、专业的方式回答，不要使用波浪号或过度口语化表达。
                 """.formatted(query);
+    }
+
+    private boolean isCasualChat(String query) {
+        String normalized = normalizeQuery(query);
+        return Set.of("你好", "您好", "hello", "hi", "嗨", "在吗", "你是谁", "你能做什么", "能做什么")
+                .contains(normalized);
+    }
+
+    private Optional<String> extractHotspotSearchKeyword(String query) {
+        String normalized = normalizeQuery(query);
+        if (normalized.isBlank()) {
+            return Optional.empty();
+        }
+        boolean hasSearchVerb = normalized.matches(".*(搜索|搜|查找|查询|检索|找一下|找找|帮我找|帮我查).*");
+        boolean hasHotspotNoun = normalized.contains("热点") || normalized.contains("新闻") || normalized.contains("资讯") || normalized.contains("相关内容");
+        boolean hasAnalysisVerb = normalized.matches(".*(为什么|原因|影响|怎么看|如何看|是否|可信吗|重要|风险|后续|解读|分析).*");
+        if ((!hasSearchVerb && !hasHotspotNoun) || hasAnalysisVerb) {
+            return Optional.empty();
+        }
+
+        String keyword = normalized
+                .replaceAll("(请|帮我|帮忙|可以|能不能|能否|麻烦|一下|搜索|搜一下|搜|查找|查询|查一下|检索|找一下|找找|帮我找|帮我查)", " ")
+                .replaceAll("(最新|最近|相关内容|相关|新闻|资讯|热点|内容|关于|的)", " ")
+                .replaceAll("[，。！？、；：,.!?;:\\[\\]【】()（）\"'“”]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+        if (keyword.isBlank() || keyword.length() > 40) {
+            return Optional.empty();
+        }
+        return Optional.of(formatKeywordForDisplay(keyword));
+    }
+
+    private String normalizeQuery(String query) {
+        return query == null ? "" : query.trim().replaceAll("\\s+", " ");
+    }
+
+    private String formatKeywordForDisplay(String keyword) {
+        if ("a股".equalsIgnoreCase(keyword)) {
+            return "A股";
+        }
+        if ("ai".equalsIgnoreCase(keyword)) {
+            return "AI";
+        }
+        return keyword;
+    }
+
+    private String buildHotspotLibraryAnswer(String keyword, List<HotspotResponse> hotspots) {
+        if (hotspots.isEmpty()) {
+            return "当前热点库里暂时没有找到与「" + keyword + "」直接相关的内容。你可以先在热点雷达里添加或触发这个关键词，抓取完成后我再继续帮你分析。";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("我在当前热点库里找到 ").append(hotspots.size())
+                .append(" 条与「").append(keyword).append("」相关的热点：\n\n");
+        hotspots.stream().limit(5).forEach(h -> {
+            sb.append("- ").append(h.getTitle() != null ? h.getTitle() : "（无标题）");
+            if (h.getSource() != null && !h.getSource().isBlank()) {
+                sb.append("｜").append(h.getSource());
+            }
+            if (h.getSummary() != null && !h.getSummary().isBlank()) {
+                sb.append("\n  ").append(truncateInline(h.getSummary(), 90));
+            }
+            sb.append("\n");
+        });
+        if (hotspots.size() > 5) {
+            sb.append("\n其余 ").append(hotspots.size() - 5).append(" 条可以在右侧热点列表继续查看。");
+        }
+        return sb.toString();
+    }
+
+    private List<HotspotResponse> rankChatHotspotResults(String keyword, List<HotspotResponse> candidates) {
+        String normalizedKeyword = keyword.toLowerCase(Locale.ROOT);
+        return candidates.stream()
+                .sorted(Comparator
+                        .comparingDouble((HotspotResponse h) -> chatSearchScore(h, normalizedKeyword)).reversed()
+                        .thenComparing((HotspotResponse h) -> Optional.ofNullable(h.getHotScore()).orElse(0.0), Comparator.reverseOrder())
+                        .thenComparing((HotspotResponse h) -> Optional.ofNullable(h.getPublishedAt()).orElse(Instant.EPOCH), Comparator.reverseOrder()))
+                .toList();
+    }
+
+    private double chatSearchScore(HotspotResponse hotspot, String normalizedKeyword) {
+        double score = Optional.ofNullable(hotspot.getRelevanceScore()).orElse(0.0);
+        String title = lower(hotspot.getTitle());
+        String summary = lower(hotspot.getSummary());
+        String monitorKeyword = lower(hotspot.getMonitorKeyword());
+        String source = lower(hotspot.getSource());
+        if (title.contains(normalizedKeyword)) {
+            score += 5.0;
+        }
+        if (hotspot.getTags() != null && hotspot.getTags().stream().anyMatch(tag -> lower(tag).contains(normalizedKeyword))) {
+            score += 4.0;
+        }
+        if (summary.contains(normalizedKeyword)) {
+            score += 2.0;
+        }
+        if (monitorKeyword.contains(normalizedKeyword)) {
+            score += 1.5;
+        }
+        if (source.contains(normalizedKeyword)) {
+            score += 0.5;
+        }
+        return score;
+    }
+
+    private String lower(String value) {
+        return value == null ? "" : value.toLowerCase(Locale.ROOT);
+    }
+
+    private String truncateInline(String text, int maxChars) {
+        if (text.length() <= maxChars) {
+            return text;
+        }
+        return text.substring(0, maxChars) + "…";
     }
 
     private String buildHistoryContext(Long conversationId) {
@@ -482,15 +657,24 @@ public class AgentOrchestrator {
         return sb.toString();
     }
 
-    private void sendFinalEvent(Long executionId, List<Hotspot> hotspots, String answer) {        // 将 Hotspot 实体转换为 DTO，供前端 SSE 末尾事件消费
+    private void sendFinalEvent(Long executionId, List<Hotspot> hotspots, String answer) {
+        sendFinalEvent(executionId, hotspots, answer, "处理完成，共返回 " + hotspots.size() + " 条热点");
+    }
+
+    private void sendFinalEvent(Long executionId, List<Hotspot> hotspots, String answer, String message) {
+        // 将 Hotspot 实体转换为 DTO，供前端 SSE 末尾事件消费
         List<HotspotResponse> hotspotResponses = hotspots.stream()
                 .map(hotspotService::toResponse)
                 .collect(Collectors.toList());
 
+        sendFinalDtoEvent(executionId, hotspotResponses, answer, message);
+    }
+
+    private void sendFinalDtoEvent(Long executionId, List<HotspotResponse> hotspotResponses, String answer, String message) {
         AgentStepEvent finalEvent = new AgentStepEvent(
                 "System",
                 AgentConstants.STATUS_DONE,
-                "所有 Agent 执行完毕，共生成 " + hotspots.size() + " 条热点",
+                message,
                 Instant.now(),
                 answer,
                 hotspotResponses

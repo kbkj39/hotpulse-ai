@@ -6,6 +6,7 @@ interface HotspotState {
   filter: HotspotFilter
   total: number
   setHotspots: (hotspots: Hotspot[], total: number) => void
+  replaceWithSearchResults: (hotspots: Hotspot[]) => void
   addHotspot: (hotspot: Hotspot) => void
   setFilter: (filter: Partial<HotspotFilter>) => void
 }
@@ -19,6 +20,8 @@ export const useHotspotStore = create<HotspotState>((set) => ({
     limit: 20,
   },
   setHotspots: (hotspots, total) => set({ hotspots, total }),
+  replaceWithSearchResults: (hotspots) =>
+    set({ hotspots, total: hotspots.length }),
   addHotspot: (hotspot) =>
     set((state) => ({ hotspots: [hotspot, ...state.hotspots] })),
   setFilter: (newFilter) =>

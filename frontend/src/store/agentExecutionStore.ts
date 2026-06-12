@@ -39,10 +39,8 @@ export const useAgentExecutionStore = create<AgentExecutionState>((set, get) => 
           if (event.answer) set({ finalAnswer: event.answer })
 
           if (event.hotspots && Array.isArray(event.hotspots) && event.hotspots.length > 0) {
-            const addHotspot = useHotspotStore.getState().addHotspot
-            for (let i = event.hotspots.length - 1; i >= 0; i--) {
-              try { addHotspot(event.hotspots[i] as any) } catch { /* ignore */ }
-            }
+            const replaceWithSearchResults = useHotspotStore.getState().replaceWithSearchResults
+            replaceWithSearchResults(event.hotspots as any[])
           }
 
           if (event.status === 'DONE' || event.status === 'FAILED') {

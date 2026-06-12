@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutorService;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -75,6 +76,30 @@ class AgentOrchestratorHotspotChatTest {
         verify(hotspotService).getHotspotDetail(hotspotId);
         verify(tracker).recordStep(eq(executionId), eq("HotspotChat"), eq("RUNNING"),
                 org.mockito.ArgumentMatchers.contains("加载热点"), org.mockito.ArgumentMatchers.isNull());
+        verify(executionService).markDone(executionId);
+    }
+
+    @Test
+    void executeSearchQuestionUsesHotspotLibraryBeforePlanner() {
+        Long executionId = 43L;
+        Long conversationId = 2L;
+        HotspotResponse hotspot = new HotspotResponse();
+        hotspot.setId(11L);
+        hotspot.setTitle("A股科技板块走强");
+        hotspot.setSummary("A股市场热点摘要");
+        hotspot.setSource("测试源");
+
+        when(hotspotService.getHotspots(eq("relevance"), eq(1), eq(30),
+                isNull(), isNull(), isNull(), eq("A股")))
+                .thenReturn(java.util.Map.of("items", java.util.List.of(hotspot), "total", 1L));
+
+        agentOrchestrator.execute(executionId, "帮我搜索A股热点", conversationId, null);
+
+        verify(plannerAgent, never()).plan(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyString());
+        verify(hotspotService).getHotspots(eq("relevance"), eq(1), eq(30),
+                isNull(), isNull(), isNull(), eq("A股"));
+        verify(tracker).recordStep(eq(executionId), eq("Intent"), eq("DONE"),
+                org.mockito.ArgumentMatchers.contains("A股"), org.mockito.ArgumentMatchers.isNull());
         verify(executionService).markDone(executionId);
     }
 }

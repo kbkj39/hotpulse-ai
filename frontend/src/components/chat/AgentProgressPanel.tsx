@@ -7,6 +7,21 @@ const STATUS_DOT: Record<string, { symbol: string; color: string }> = {
   FAILED:   { symbol: '✕', color: '#555' },
 }
 
+const AGENT_LABELS: Record<string, string> = {
+  Intent: '意图识别',
+  HotspotSearch: '热点检索',
+  Chat: '对话',
+  ChatAgent: '对话',
+  HotspotChat: '热点分析',
+  PlannerAgent: '任务理解',
+  SearcherAgent: '信息检索',
+  CrawlerAgent: '内容抓取',
+  AnalyzerAgent: '内容分析',
+  AggregatorAgent: '热点整理',
+  ScheduledCrawl: '监控抓取',
+  System: '系统',
+}
+
 interface AgentProgressPanelProps {
   steps: AgentStepEvent[]
 }
@@ -52,7 +67,7 @@ export function AgentProgressPanel({ steps }: AgentProgressPanelProps) {
             }}
           >
             <span style={{ color: dot.color, flexShrink: 0, marginTop: '1px' }}>{dot.symbol}</span>
-            <span style={{ color: '#555', flexShrink: 0 }}>[{step.agentName}]</span>
+            <span style={{ color: '#555', flexShrink: 0 }}>[{AGENT_LABELS[step.agentName] ?? step.agentName}]</span>
             <span style={{ flex: 1, color: '#777' }}>{step.message}</span>
             <span style={{ color: '#2E2E2E', fontSize: '11px', whiteSpace: 'nowrap' }}>
               {step.timestamp ? new Date(step.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}

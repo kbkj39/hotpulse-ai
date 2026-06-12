@@ -13,6 +13,10 @@ export function HotspotsPage() {
   const { keywords, loading: keywordsLoading, error: keywordsError, createKeyword, toggleKeyword, deleteKeyword, triggerKeyword, triggerAllKeywords, updateInterval } = useMonitorKeywords()
   useSocket()
   const [trendInterval, setTrendInterval] = useState<'hour' | 'day'>('hour')
+  const activeMonitorKeyword = keywords.some((item) => item.keyword === filter.keyword)
+    ? filter.keyword
+    : undefined
+  const freeTextKeyword = activeMonitorKeyword ? undefined : filter.keyword
 
   return (
     <div>
@@ -111,7 +115,12 @@ export function HotspotsPage() {
             </button>
           </div>
         </div>
-        <HotspotTrendChart interval={trendInterval} />
+        <HotspotTrendChart
+          interval={trendInterval}
+          monitorKeyword={activeMonitorKeyword}
+          tag={filter.tag}
+          keyword={freeTextKeyword}
+        />
       </div>
       <HotspotFilterBar filter={filter} onChange={setFilter} />
       {loading ? <LoadingSpinner /> : <HotspotList hotspots={hotspots} />}

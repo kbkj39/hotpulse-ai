@@ -29,8 +29,11 @@ public class HotspotController {
 
     @GetMapping("/trends")
     public Result<List<TrendPoint>> getTrends(
-            @RequestParam(defaultValue = "hour") String interval) {
-        return Result.ok(hotspotService.getTrends(interval));
+            @RequestParam(defaultValue = "hour") String interval,
+            @RequestParam(required = false) String monitorKeyword,
+            @RequestParam(required = false) String tag,
+            @RequestParam(required = false) String keyword) {
+        return Result.ok(hotspotService.getTrends(interval, monitorKeyword, tag, keyword));
     }
 
     @GetMapping("/{id}")

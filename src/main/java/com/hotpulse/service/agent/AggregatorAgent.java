@@ -7,6 +7,7 @@ import com.hotpulse.dto.HotspotResponse;
 import com.hotpulse.entity.Document;
 import com.hotpulse.entity.Hotspot;
 import com.hotpulse.repository.DocumentRepository;
+import com.hotpulse.repository.AgentExecutionRepository;
 import com.hotpulse.repository.HotspotRepository;
 import com.hotpulse.service.hotspot.HotspotScoringService;
 import com.hotpulse.service.hotspot.HotspotSocketService;
@@ -27,6 +28,7 @@ public class AggregatorAgent {
 
     private final HotspotRepository hotspotRepository;
     private final DocumentRepository documentRepository;
+    private final AgentExecutionRepository agentExecutionRepository;
     private final HotspotScoringService hotspotScoringService;
     private final SummarizeSkill summarizeSkill;
     private final HotspotSocketService hotspotSocketService;
@@ -108,6 +110,7 @@ public class AggregatorAgent {
         resp.setImportanceScore(hotspot.getImportanceScore());
         resp.setHotScore(hotspot.getHotScore());
         resp.setAnalysisEvidence(hotspot.getAnalysisEvidence());
+        resp.setMonitorKeyword(resolveMonitorKeyword(hotspot.getExecutionId()));
         try {
             if (tagsJson != null && !tagsJson.isBlank()) {
                 resp.setTags(objectMapper.readValue(tagsJson, new TypeReference<List<String>>() {}));
@@ -116,6 +119,27 @@ public class AggregatorAgent {
             resp.setTags(List.of());
         }
         return resp;
+    }
+
+    private String resolveMonitorKeyword(Long executionId) {
+        if (executionId == null) {
+            return null;
+        }
+        return agentExecutionRepository.findById(executionId)
+                .map(execution -> parseMonitorKeyword(execution.getQuery()))
+                .orElse(null);
+    }
+
+    private String parseMonitorKeyword(String query) {
+        if (query == null || query.isBlank()) {
+            return null;
+        }
+        String prefix = "监控抓取:";
+        if (query.startsWith(prefix)) {
+            String keyword = query.substring(prefix.length()).trim();
+            return keyword.isBlank() ? null : keyword;
+        }
+        return null;
     }
 
     private List<Map.Entry<Document, AnalyzerAgent.AnalysisResult>> deduplicate(

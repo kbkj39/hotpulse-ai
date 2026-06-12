@@ -20,9 +20,17 @@ interface TrendPoint {
 
 interface HotspotTrendChartProps {
   interval?: 'hour' | 'day'
+  monitorKeyword?: string
+  tag?: string
+  keyword?: string
 }
 
-export function HotspotTrendChart({ interval = 'hour' }: HotspotTrendChartProps) {
+export function HotspotTrendChart({
+  interval = 'hour',
+  monitorKeyword,
+  tag,
+  keyword,
+}: HotspotTrendChartProps) {
   const [data, setData] = useState<TrendPoint[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +41,7 @@ export function HotspotTrendChart({ interval = 'hour' }: HotspotTrendChartProps)
     setError(null)
 
     api
-      .getHotspotTrends(interval)
+      .getHotspotTrends(interval, { monitorKeyword, tag, keyword })
       .then((result) => {
         if (!cancelled) {
           setData(result)
@@ -53,7 +61,13 @@ export function HotspotTrendChart({ interval = 'hour' }: HotspotTrendChartProps)
     return () => {
       cancelled = true
     }
-  }, [interval])
+  }, [interval, monitorKeyword, tag, keyword])
+
+  const scopeLabel =
+    monitorKeyword ? `监控关键词：${monitorKeyword}` :
+    tag ? `标签：${tag}` :
+    keyword ? `关键词：${keyword}` :
+    '全部热点'
 
   if (loading) {
     return (
@@ -92,7 +106,23 @@ export function HotspotTrendChart({ interval = 'hour' }: HotspotTrendChartProps)
   }))
 
   return (
-    <div style={{ width: '100%', height: '300px', marginTop: '20px' }}>
+    <div style={{ width: '100%', height: '320px', marginTop: '20px' }}>
+      <div
+        style={{
+          marginBottom: '8px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '12px',
+          flexWrap: 'wrap',
+          fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+          fontSize: '11px',
+          color: '#666',
+          letterSpacing: '0.04em',
+        }}
+      >
+        <span>{scopeLabel}</span>
+        <span>分数线为每个时间桶 Top 5 热点平均分</span>
+      </div>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={formattedData}
@@ -132,7 +162,7 @@ export function HotspotTrendChart({ interval = 'hour' }: HotspotTrendChartProps)
             dataKey="avgHotScore"
             stroke="#8884d8"
             strokeWidth={2}
-            name="Avg Hot Score"
+            name="Top Hot Score"
             dot={{ r: 4 }}
           />
           <Line
@@ -141,7 +171,7 @@ export function HotspotTrendChart({ interval = 'hour' }: HotspotTrendChartProps)
             dataKey="avgImportanceScore"
             stroke="#82ca9d"
             strokeWidth={2}
-            name="Avg Importance"
+            name="Top Importance"
             dot={{ r: 4 }}
           />
           <Line

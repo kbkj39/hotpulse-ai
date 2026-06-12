@@ -19,6 +19,7 @@ public class HotspotResponse {
     private Double relevanceScore;
     private Double importanceScore;
     private String analysisEvidence;
+    private String monitorKeyword;
     private List<String> tags;
     private String url;
     private String fullText;

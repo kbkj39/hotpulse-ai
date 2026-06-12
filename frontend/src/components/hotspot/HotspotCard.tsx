@@ -104,21 +104,54 @@ export function HotspotCard({ hotspot, selectable, selected, onSelect }: Hotspot
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
         <SourceTag source={hotspot.source} />
-        {hotspot.tags?.map((tag) => (
+        {hotspot.monitorKeyword && (
+          <span
+            title="监控关键词"
+            style={{
+              border: '1px solid #3A3A3A',
+              background: '#080808',
+              padding: '2px 8px',
+              fontSize: '12px',
+              fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+              color: '#E6E6E6',
+              letterSpacing: '0.02em',
+              borderRadius: '4px',
+            }}
+          >
+            ▶ {hotspot.monitorKeyword}
+          </span>
+        )}
+        {hotspot.tags && hotspot.tags.length > 0 ? hotspot.tags.map((tag) => (
           <span
             key={tag}
             style={{
-              border: '1px solid #1F1F1F',
-              padding: '1px 6px',
+              border: '1px solid #304736',
+              background: '#101810',
+              padding: '2px 7px',
               fontSize: '11px',
               fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-              color: '#555',
+              color: '#9CE6A3',
               letterSpacing: '0.02em',
+              borderRadius: '4px',
             }}
           >
             #{tag}
           </span>
-        ))}
+        )) : (
+          <span
+            style={{
+              border: '1px dashed #2A2A2A',
+              padding: '2px 7px',
+              fontSize: '11px',
+              fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+              color: '#555',
+              letterSpacing: '0.02em',
+              borderRadius: '4px',
+            }}
+          >
+            NO TAGS
+          </span>
+        )}
       </div>
 
       {hotspot.summary && (

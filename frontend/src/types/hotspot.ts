@@ -9,6 +9,7 @@ export interface Hotspot {
   relevanceScore: number
   importanceScore: number
   analysisEvidence: string
+  monitorKeyword?: string
   tags: string[]
   url: string
   fullText?: string

@@ -35,10 +35,13 @@ export const api = {
       .get<ApiResult<Hotspot>>(`/hotspots/${id}`)
       .then((r) => r.data.data),
 
-  getHotspotTrends: (interval: 'hour' | 'day' = 'hour') =>
+  getHotspotTrends: (
+    interval: 'hour' | 'day' = 'hour',
+    filters?: { monitorKeyword?: string; tag?: string; keyword?: string },
+  ) =>
     instance
       .get<ApiResult<{ timestamp: string; count: number; avgHotScore: number; avgImportanceScore: number }[]>>('/hotspots/trends', {
-        params: { interval },
+        params: { interval, ...filters },
       })
       .then((r) => r.data.data),
 

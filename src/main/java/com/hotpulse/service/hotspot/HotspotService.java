@@ -5,6 +5,7 @@ import com.hotpulse.dto.TrendPoint;
 import com.hotpulse.entity.Document;
 import com.hotpulse.entity.Hotspot;
 import com.hotpulse.repository.DocumentRepository;
+import com.hotpulse.repository.AgentExecutionRepository;
 import com.hotpulse.repository.HotspotRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,6 +35,7 @@ public class HotspotService {
 
     private final HotspotRepository hotspotRepository;
     private final DocumentRepository documentRepository;
+    private final AgentExecutionRepository agentExecutionRepository;
     private final ObjectMapper objectMapper;
     private final RedisTemplate<String, Object> redisTemplate;
 
@@ -83,6 +85,7 @@ public class HotspotService {
         resp.setImportanceScore(hotspot.getImportanceScore());
         resp.setHotScore(hotspot.getHotScore());
         resp.setAnalysisEvidence(hotspot.getAnalysisEvidence());
+        resp.setMonitorKeyword(resolveMonitorKeyword(hotspot.getExecutionId()));
 
         try {
             if (hotspot.getTags() != null && !hotspot.getTags().isBlank()) {
@@ -104,8 +107,36 @@ public class HotspotService {
         return resp;
     }
 
-    public List<TrendPoint> getTrends(String interval) {
-        String cacheKey = "trends:" + interval;
+    private String resolveMonitorKeyword(Long executionId) {
+        if (executionId == null) {
+            return null;
+        }
+        return agentExecutionRepository.findById(executionId)
+                .map(execution -> parseMonitorKeyword(execution.getQuery()))
+                .orElse(null);
+    }
+
+    private String parseMonitorKeyword(String query) {
+        if (query == null || query.isBlank()) {
+            return null;
+        }
+        String prefix = "监控抓取:";
+        if (query.startsWith(prefix)) {
+            String keyword = query.substring(prefix.length()).trim();
+            return keyword.isBlank() ? null : keyword;
+        }
+        return null;
+    }
+
+    public List<TrendPoint> getTrends(String interval, String monitorKeyword, String tag, String keyword) {
+        String normalizedMonitorKeyword = normalize(monitorKeyword);
+        String normalizedTag = normalize(tag);
+        String normalizedKeyword = normalize(keyword);
+        String cacheKey = "trends:%s:%s:%s:%s".formatted(
+                interval,
+                normalizedMonitorKeyword,
+                normalizedTag,
+                normalizedKeyword);
         Object cached = redisTemplate.opsForValue().get(cacheKey);
         if (cached instanceof List<?> cachedList && !cachedList.isEmpty()) {
             try {
@@ -127,7 +158,12 @@ public class HotspotService {
                 ? Instant.now().minus(30, ChronoUnit.DAYS)
                 : Instant.now().minus(7, ChronoUnit.DAYS);
 
-        List<Object[]> rows = hotspotRepository.getTrendStats(pgInterval, startTime);
+        List<Object[]> rows = hotspotRepository.getTrendStats(
+                pgInterval,
+                startTime,
+                normalizedMonitorKeyword,
+                normalizedTag,
+                normalizedKeyword);
         List<TrendPoint> points = rows.stream()
                 .map(row -> new TrendPoint(
                         toInstant(row[0]),

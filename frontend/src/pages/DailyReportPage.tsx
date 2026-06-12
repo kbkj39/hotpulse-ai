@@ -1,10 +1,61 @@
-﻿import { useState } from 'react'
-import { useReport } from '@/hooks/useReport'
+﻿import { useState, type CSSProperties, type MouseEvent } from 'react'
+import { useReport, type DailyReportStatus } from '@/hooks/useReport'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+
+const STATUS_LABEL: Record<DailyReportStatus, string> = {
+  PENDING: '等待生成',
+  GENERATING: '生成中',
+  READY: '已就绪',
+  EMPTY: '无热点',
+  FAILED: '失败',
+}
+
+const STATUS_COLOR: Record<DailyReportStatus, string> = {
+  PENDING: '#888',
+  GENERATING: '#60a5fa',
+  READY: '#4ade80',
+  EMPTY: '#666',
+  FAILED: '#f87171',
+}
+
+const buttonStyle: CSSProperties = {
+  border: '1px solid #1F1F1F',
+  background: 'transparent',
+  color: '#555',
+  fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+  fontSize: '11px',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  padding: '4px 12px',
+  cursor: 'pointer',
+  transition: 'all 150ms ease',
+}
+
+function hoverButton(e: MouseEvent<HTMLButtonElement>, active: boolean) {
+  if (active) return
+  e.currentTarget.style.borderColor = '#fff'
+  e.currentTarget.style.color = '#fff'
+}
+
+function unhoverButton(e: MouseEvent<HTMLButtonElement>, active: boolean) {
+  if (active) return
+  e.currentTarget.style.borderColor = '#1F1F1F'
+  e.currentTarget.style.color = '#555'
+}
 
 export function DailyReportPage() {
   const [date, setDate] = useState<string>('')
-  const { report, loading, refetch } = useReport(date || undefined)
+  const { report, loading, regenerating, error, refetch, regenerate } = useReport(date || undefined)
+
+  const targetDate = date || report?.reportDate
+  const isBusy = loading || regenerating
+  const canRegenerate =
+    !!targetDate && report?.status !== 'GENERATING' && !regenerating
+
+  const handleRegenerate = () => {
+    if (!targetDate) return
+    regenerate(targetDate)
+  }
 
   return (
     <div style={{ maxWidth: '720px' }}>
@@ -16,6 +67,7 @@ export function DailyReportPage() {
           marginBottom: '24px',
           paddingBottom: '16px',
           borderBottom: '2px solid #1F1F1F',
+          flexWrap: 'wrap',
         }}
       >
         <h1
@@ -49,34 +101,44 @@ export function DailyReportPage() {
         />
         <button
           onClick={refetch}
-          style={{
-            border: '1px solid #1F1F1F',
-            background: 'transparent',
-            color: '#555',
-            fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-            fontSize: '11px',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            padding: '4px 12px',
-            cursor: 'pointer',
-            transition: 'all 150ms ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#fff'
-            e.currentTarget.style.color = '#fff'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#1F1F1F'
-            e.currentTarget.style.color = '#555'
-          }}
+          disabled={isBusy}
+          style={{ ...buttonStyle, opacity: isBusy ? 0.5 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}
+          onMouseEnter={(e) => hoverButton(e, isBusy)}
+          onMouseLeave={(e) => unhoverButton(e, isBusy)}
         >
           REFRESH
         </button>
+        <button
+          onClick={handleRegenerate}
+          disabled={!canRegenerate}
+          style={{
+            ...buttonStyle,
+            opacity: !canRegenerate ? 0.5 : 1,
+            cursor: !canRegenerate ? 'not-allowed' : 'pointer',
+          }}
+          onMouseEnter={(e) => hoverButton(e, !canRegenerate)}
+          onMouseLeave={(e) => unhoverButton(e, !canRegenerate)}
+        >
+          {regenerating ? 'REGENERATING…' : 'REGENERATE'}
+        </button>
       </div>
 
-      {loading && <LoadingSpinner />}
+      {error && (
+        <p
+          style={{
+            marginBottom: '16px',
+            fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+            fontSize: '12px',
+            color: '#f87171',
+          }}
+        >
+          {error}
+        </p>
+      )}
 
-      {!loading && !report && (
+      {loading && !report && <LoadingSpinner />}
+
+      {!loading && !report && !error && (
         <p
           style={{
             textAlign: 'center',
@@ -92,7 +154,7 @@ export function DailyReportPage() {
         </p>
       )}
 
-      {!loading && report && (
+      {report && (
         <div
           style={{
             border: '1px solid #1F1F1F',
@@ -107,18 +169,35 @@ export function DailyReportPage() {
               marginBottom: '20px',
               paddingBottom: '16px',
               borderBottom: '1px solid #111',
+              flexWrap: 'wrap',
+              gap: '12px',
             }}
           >
-            <span
-              style={{
-                fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
-                fontSize: '13px',
-                color: '#fff',
-                letterSpacing: '0.03em',
-              }}
-            >
-              {report.reportDate}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span
+                style={{
+                  fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+                  fontSize: '13px',
+                  color: '#fff',
+                  letterSpacing: '0.03em',
+                }}
+              >
+                {report.reportDate}
+              </span>
+              <span
+                style={{
+                  fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+                  fontSize: '10px',
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  color: STATUS_COLOR[report.status],
+                  border: `1px solid ${STATUS_COLOR[report.status]}`,
+                  padding: '2px 8px',
+                }}
+              >
+                {STATUS_LABEL[report.status]}
+              </span>
+            </div>
             <span
               style={{
                 fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
@@ -127,20 +206,70 @@ export function DailyReportPage() {
                 letterSpacing: '0.05em',
               }}
             >
-              {report.hotspotCount} ITEMS · {new Date(report.generatedAt).toLocaleString('zh-CN')}
+              {report.hotspotCount != null ? `${report.hotspotCount} ITEMS` : '—'}
+              {report.generatedAt
+                ? ` · ${new Date(report.generatedAt).toLocaleString('zh-CN')}`
+                : ''}
             </span>
           </div>
-          <div
-            style={{
-              fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
-              fontSize: '13px',
-              color: '#888',
-              lineHeight: 1.8,
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {report.content}
-          </div>
+
+          {report.status === 'GENERATING' && (
+            <div style={{ marginBottom: '16px' }}>
+              <LoadingSpinner />
+              <p
+                style={{
+                  marginTop: '12px',
+                  fontFamily: "'Fira Code', 'Noto Sans SC', monospace",
+                  fontSize: '11px',
+                  color: '#555',
+                  textAlign: 'center',
+                }}
+              >
+                LLM 正在生成日报，请稍候…
+              </p>
+            </div>
+          )}
+
+          {report.status === 'FAILED' && report.errorMessage && (
+            <p
+              style={{
+                marginBottom: '16px',
+                fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
+                fontSize: '13px',
+                color: '#f87171',
+                lineHeight: 1.6,
+              }}
+            >
+              {report.errorMessage}
+            </p>
+          )}
+
+          {report.status === 'EMPTY' && (
+            <p
+              style={{
+                marginBottom: '16px',
+                fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
+                fontSize: '13px',
+                color: '#666',
+              }}
+            >
+              该日期没有热点数据，无法生成日报。
+            </p>
+          )}
+
+          {report.content && (
+            <div
+              style={{
+                fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
+                fontSize: '13px',
+                color: '#888',
+                lineHeight: 1.8,
+                whiteSpace: 'pre-wrap',
+              }}
+            >
+              {report.content}
+            </div>
+          )}
         </div>
       )}
     </div>

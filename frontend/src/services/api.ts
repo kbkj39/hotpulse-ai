@@ -99,6 +99,11 @@ export const api = {
       .get<ApiResult<unknown>>('/reports/daily/latest')
       .then((r) => r.data.data),
 
+  regenerateDailyReport: (date: string) =>
+    instance
+      .post<ApiResult<unknown>>('/reports/daily/regenerate', null, { params: { date } })
+      .then((r) => r.data.data),
+
   getConversations: (page = 1, limit = 30) =>
     instance
       .get<ApiResult<{ total: number; items: Conversation[] }>>('/agent/conversations', {
